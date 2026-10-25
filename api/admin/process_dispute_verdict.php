@@ -153,6 +153,9 @@ try {
     exit;
 
 } catch (PDOException $e) {
+    if (isset($db) && $db->inTransaction()) {
+        $db->rollBack();
+    }
     error_log("Admin API Error in " . basename(__FILE__) . ": " . $e->getMessage());
     http_response_code(500);
     echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
