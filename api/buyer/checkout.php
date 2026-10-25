@@ -1,8 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/checkout.php
-session_start();
-
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -11,7 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../../config/database.php';
+// 1. Ambil identitas pembeli terpercaya dari sesi server
+$userId = require_auth();
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
@@ -20,12 +19,6 @@ try {
     // 1. AMBIL DAFTAR ALAMAT PENGGUNA UNTUK CHECKOUT
     // =============================================================
     if ($action === 'get_addresses') {
-        $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
-        if ($userId <= 0) {
-            echo json_encode(["status" => false, "message" => "User ID tidak valid."]);
-            exit;
-        }
-
         $stmt = $conn->prepare("
             SELECT address_id, label, recipient_name, phone, street_address, city, province, postal_code, is_default
             FROM addresses
@@ -45,16 +38,10 @@ try {
     if ($action === 'create_order') {
         $input = json_decode(file_get_contents("php://input"), true) ?: [];
 
-        $userId = isset($input['user_id']) ? intval($input['user_id']) : (isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0);
         $addressId = isset($input['address_id']) ? intval($input['address_id']) : 0;
         $paymentMethod = isset($input['payment_method']) ? trim($input['payment_method']) : 'COD';
         $shops = isset($input['shops']) ? $input['shops'] : [];
         $serviceFee = 1000.00;
-
-        if ($userId <= 0) {
-            echo json_encode(["status" => false, "message" => "Sesi Anda telah berakhir. Silakan login kembali!"]);
-            exit;
-        }
 
         if (empty($shops)) {
             echo json_encode(["status" => false, "message" => "Tidak ada barang belanjaan yang dikirim."]);
@@ -446,5 +433,8 @@ try {
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
-    echo json_encode(["status" => false, "message" => "Gagal membuat pesanan: " . $e->getMessage()]);
+    error_log("Checkout error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan saat memproses pesanan."]);
+    exit;
 }

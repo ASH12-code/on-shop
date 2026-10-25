@@ -1,6 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/cart.php
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -9,7 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../../config/database.php';
+// 1. Dapatkan user_id dari Sesi PHP (Wajib Login)
+$userId = require_auth();
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
@@ -18,14 +19,8 @@ try {
     // 1. DAFTAR BARANG KERANJANG (DIKELOMPOKKAN PER TOKO)
     // -------------------------------------------------------------
     if ($action === 'list') {
-        $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
-        if ($userId <= 0) {
-            echo json_encode(["status" => false, "message" => "User ID tidak valid.", "data" => []]);
-            exit;
-        }
-
         // Kueri fleksibel: jika variant_id di tabel cart NULL, otomatis fallback ke harga terendah produk
-       $sql = "
+        $sql = "
             SELECT 
                 c.cart_id,
                 c.user_id,
@@ -96,15 +91,9 @@ try {
     // 2. TAMBAH BARANG KE KERANJANG (DENGAN PENGECEKAN STOK REAL-TIME)
     // -------------------------------------------------------------
     if ($action === 'add') {
-        $userId    = isset($input['user_id']) ? intval($input['user_id']) : 0;
         $productId = isset($input['product_id']) ? intval($input['product_id']) : 0;
         $variantId = (!empty($input['variant_id'])) ? intval($input['variant_id']) : null;
         $qty       = isset($input['qty']) ? intval($input['qty']) : 1;
-
-        if ($userId <= 0) {
-            echo json_encode(["status" => false, "message" => "Sesi login tidak ditemukan. Silakan login kembali."]);
-            exit;
-        }
 
         if ($productId <= 0) {
             echo json_encode(["status" => false, "message" => "Produk tidak valid."]);
@@ -203,7 +192,6 @@ try {
     // -------------------------------------------------------------
     if ($action === 'update_qty') {
         $cartId = isset($input['cart_id']) ? intval($input['cart_id']) : 0;
-        $userId = isset($input['user_id']) ? intval($input['user_id']) : 0;
         $qty    = isset($input['qty']) ? intval($input['qty']) : 1;
 
         $stmt = $conn->prepare("UPDATE cart SET qty = :qty WHERE cart_id = :cid AND user_id = :uid");
@@ -218,7 +206,6 @@ try {
     // -------------------------------------------------------------
     if ($action === 'delete_item') {
         $cartId = isset($input['cart_id']) ? intval($input['cart_id']) : 0;
-        $userId = isset($input['user_id']) ? intval($input['user_id']) : 0;
 
         $stmt = $conn->prepare("DELETE FROM cart WHERE cart_id = :cid AND user_id = :uid");
         $stmt->execute(['cid' => $cartId, 'uid' => $userId]);
@@ -231,10 +218,9 @@ try {
     // 5. HAPUS BANYAK ITEM TERPILIH
     // -------------------------------------------------------------
     if ($action === 'delete_selected') {
-        $userId  = isset($input['user_id']) ? intval($input['user_id']) : 0;
         $cartIds = isset($input['cart_ids']) && is_array($input['cart_ids']) ? $input['cart_ids'] : [];
 
-        if (!empty($cartIds) && $userId > 0) {
+        if (!empty($cartIds)) {
             $placeholders = implode(',', array_fill(0, count($cartIds), '?'));
             $stmt = $conn->prepare("DELETE FROM cart WHERE user_id = ? AND cart_id IN ($placeholders)");
             $stmt->execute(array_merge([$userId], array_map('intval', $cartIds)));
@@ -245,5 +231,9 @@ try {
     }
 
 } catch (PDOException $e) {
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Cart error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+    exit;
 }
+?>

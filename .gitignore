@@ -1,3 +1,5 @@
 node_modules
 .env
 dist
+*.sql.bak
+*_backup_*.sql

@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../helpers/auth.php';
+require_role('admin');
 // api/admin/resolve_dispute.php
 require_once '../../config/database.php';
 
@@ -32,9 +34,9 @@ try {
         "message" => "Putusan berhasil diperbarui di database"
     ]);
 } catch (PDOException $e) {
-    echo json_encode([
-        "status" => false,
-        "message" => "Gagal update database: " . $e->getMessage()
-    ]);
+    error_log("Admin API Error in " . basename(__FILE__) . ": " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+    exit;
 }
 ?>

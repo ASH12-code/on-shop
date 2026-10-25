@@ -1,8 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/open_shop.php
-session_start();
-
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -11,16 +9,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../../config/database.php';
-
-if (!isset($conn) && isset($pdo)) {
-    $conn = $pdo;
-}
+// 1. Ambil identitas terpercaya dari sesi server (Wajib Login)
+$userId = require_auth();
 
 $rawInput = file_get_contents("php://input");
 $input = json_decode($rawInput, true) ?: [];
 
-$userId             = isset($input['user_id']) ? (int)$input['user_id'] : (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0);
 $shopName           = isset($input['shop_name']) ? trim($input['shop_name']) : '';
 $description        = isset($input['description']) ? trim($input['description']) : null;
 $pickupAddress      = isset($input['pickup_address']) ? trim($input['pickup_address']) : '';
@@ -28,11 +22,6 @@ $pickupCity         = isset($input['pickup_city']) ? trim($input['pickup_city'])
 $pickupProvince     = isset($input['pickup_province']) ? trim($input['pickup_province']) : '';
 $bankName           = isset($input['bank_name']) ? trim($input['bank_name']) : '';
 $bankAccountNumber  = isset($input['bank_account_number']) ? trim($input['bank_account_number']) : '';
-
-if ($userId <= 0) {
-    echo json_encode(["status" => false, "message" => "Sesi login tidak valid. Silakan login terlebih dahulu."]);
-    exit;
-}
 
 if (empty($shopName) || empty($pickupAddress) || empty($pickupCity) || empty($pickupProvince) || empty($bankName) || empty($bankAccountNumber)) {
     echo json_encode(["status" => false, "message" => "Mohon lengkapi semua bidang bertanda bintang (*)."]);
@@ -124,7 +113,9 @@ try {
     if ($conn && $conn->inTransaction()) {
         $conn->rollBack();
     }
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Open shop error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan saat memproses pendaftaran toko."]);
     exit;
 }
 ?>

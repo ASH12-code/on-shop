@@ -1,28 +1,15 @@
 <?php
-// C:/laragon/www/on-shop/api/buyer/submit_review.php
+// api/seller/submit_review.php (Review submission oleh buyer)
+require_once __DIR__ . '/../helpers/auth.php';
 header('Content-Type: application/json; charset=UTF-8');
-session_start();
-require_once __DIR__ . '/../../config/database.php';
 
-$db = isset($conn) ? $conn : (isset($pdo) ? $pdo : null);
+$db = get_db_connection();
 if (!$db) {
-    http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Koneksi database gagal."]);
-    exit;
+    json_response(false, "Koneksi database gagal.", null, 500);
 }
 
-// Ambil buyer yang login dari Session atau GET auth fallback
-$buyer_id = $_SESSION['user_id'] ?? null;
-if (!$buyer_id && !empty($_GET['auth_user_id'])) {
-    $buyer_id = (int)$_GET['auth_user_id'];
-    $_SESSION['user_id'] = $buyer_id;
-}
-
-if (!$buyer_id) {
-    http_response_code(401);
-    echo json_encode(["status" => false, "message" => "Silakan login terlebih dahulu untuk memberi ulasan."]);
-    exit;
-}
+// Ambil buyer yang login murni dari Sesi
+$buyer_id = require_auth();
 
 $input = json_decode(file_get_contents('php://input'), true);
 $sub_order_id = (int)($input['sub_order_id'] ?? 0);
@@ -91,7 +78,8 @@ try {
     exit;
 
 } catch (Exception $e) {
+    error_log("Submit review error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Kesalahan Database: " . $e->getMessage()]);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
     exit;
 }

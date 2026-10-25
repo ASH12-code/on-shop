@@ -1,6 +1,7 @@
 <?php
+require_once __DIR__ . '/../helpers/auth.php';
+require_role('admin');
 // C:/laragon/www/on-shop/api/admin/update_merchant_status.php
-header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -91,7 +92,8 @@ try {
     }
 
 } catch (PDOException $e) {
+    error_log("Admin API Error in " . basename(__FILE__) . ": " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
     exit;
 }

@@ -1,8 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/help_ticket.php
-session_start();
-
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -11,21 +9,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../../config/database.php';
+// 1. Ambil identitas terpercaya dari sesi server (Wajib Login)
+$userId = require_auth();
 
 $rawInput = file_get_contents("php://input");
 $postData = json_decode($rawInput, true) ?: [];
 
-// Ambil ID user dari request atau sesi
-$userId = isset($postData['user_id']) ? (int)$postData['user_id'] : (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0);
 $category = isset($postData['category']) ? trim($postData['category']) : '';
 $subject = isset($postData['subject']) ? trim($postData['subject']) : '';
 $message = isset($postData['message']) ? trim($postData['message']) : '';
-
-if (!$userId) {
-    echo json_encode(["status" => false, "message" => "Sesi tidak valid. Silakan login terlebih dahulu."]);
-    exit;
-}
 
 if (empty($category) || empty($subject) || empty($message)) {
     echo json_encode(["status" => false, "message" => "Harap lengkapi semua kolom laporan masalah!"]);
@@ -70,10 +62,14 @@ try {
         "message" => "Laporan masalah berhasil dikirim ke Admin!",
         "ticket_code" => $ticketCode
     ]);
+    exit;
 } catch (PDOException $e) {
     if ($conn->inTransaction()) {
         $conn->rollBack();
     }
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Help ticket error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+    exit;
 }
 ?>

@@ -1,6 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/profile.php
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -9,17 +9,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../../config/database.php';
+// 1. Ambil identitas terpercaya dari sesi server (Wajib Login)
+$userId = require_auth();
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
-    $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
-    if ($userId <= 0) {
-        echo json_encode(["status" => false, "message" => "ID Pengguna tidak valid."]);
-        exit;
-    }
-
     try {
         $stmt = $conn->prepare("SELECT user_id, user_code, name, email, phone, role, has_shop, avatar_url, created_at FROM users WHERE user_id = :id");
         $stmt->execute(['id' => $userId]);
@@ -31,17 +26,20 @@ if ($method === 'GET') {
         }
 
         echo json_encode(["status" => true, "data" => $user]);
+        exit;
     } catch (PDOException $e) {
-        echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+        error_log("Get profile error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+        exit;
     }
 } elseif ($method === 'POST') {
     $input = json_decode(file_get_contents("php://input"), true);
-    $userId = isset($input['user_id']) ? intval($input['user_id']) : 0;
     $name = isset($input['name']) ? trim($input['name']) : '';
     $email = isset($input['email']) ? trim($input['email']) : null;
     $phone = isset($input['phone']) ? trim($input['phone']) : null;
 
-    if ($userId <= 0 || empty($name)) {
+    if (empty($name)) {
         echo json_encode(["status" => false, "message" => "Nama lengkap wajib diisi."]);
         exit;
     }
@@ -80,8 +78,12 @@ if ($method === 'GET') {
         ]);
 
         echo json_encode(["status" => true, "message" => "Biodata berhasil diperbarui!"]);
+        exit;
     } catch (PDOException $e) {
-        echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+        error_log("Update profile error: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+        exit;
     }
 }
 ?>

@@ -1,17 +1,16 @@
 <?php
-// C:/laragon/www/on-shop/api/buyer/auth_login.php
-session_start();
+// api/buyer/auth_login.php
 
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json; charset=UTF-8");
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../helpers/response.php';
+require_once __DIR__ . '/../../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
-
-require_once '../../config/database.php';
 
 $input = json_decode(file_get_contents("php://input"), true);
 
@@ -19,8 +18,7 @@ $username = isset($input['username']) ? trim($input['username']) : '';
 $password = isset($input['password']) ? trim($input['password']) : '';
 
 if (empty($username) || empty($password)) {
-    echo json_encode(["status" => false, "message" => "Kontak/Email dan Password wajib diisi!"]);
-    exit;
+    json_response(false, "Kontak/Email dan Password wajib diisi!", null, 400);
 }
 
 try {
@@ -34,26 +32,22 @@ try {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$user) {
-        echo json_encode(["status" => false, "message" => "Akun tidak ditemukan!"]);
-        exit;
+        json_response(false, "Kredensial login tidak valid!", null, 401);
     }
 
     // Cek apakah akun sedang diblokir oleh Admin
     if (!empty($user['is_banned']) && (int)$user['is_banned'] === 1) {
         $reason = !empty($user['banned_reason']) ? $user['banned_reason'] : "Pelanggaran pedoman layanan.";
-        echo json_encode(["status" => false, "message" => "Akun Anda ditangguhkan: " . $reason]);
-        exit;
+        json_response(false, "Akun Anda ditangguhkan: " . $reason, null, 403);
     }
 
-    // Verifikasi password (mendukung kecocokan teks langsung maupun enkripsi hash)
-    $isPasswordMatch = ($password === $user['password']) || password_verify($password, $user['password']);
-
-    if (!$isPasswordMatch) {
-        echo json_encode(["status" => false, "message" => "Password yang Anda masukkan salah!"]);
-        exit;
+    // Verifikasi password HANYA menggunakan password_verify (bcrypt)
+    if (!password_verify($password, $user['password'])) {
+        json_response(false, "Kredensial login tidak valid!", null, 401);
     }
 
     // 1. Kunci Identitas Pengguna di Sesi Server PHP
+    session_regenerate_id(true);
     $_SESSION['user_id']   = (int)$user['user_id'];
     $_SESSION['role']      = $user['role'];
     $_SESSION['has_shop']  = (int)$user['has_shop'];
@@ -77,20 +71,19 @@ try {
 
     unset($user['password']); // Hapus password dari objek sebelum dikirim ke frontend
 
-    // 3. Tentukan Arah Redirect (Admin ke Dasbor Super Admin, selain itu ke Halaman Pembeli)
+    // 3. Tentukan Arah Redirect
     $redirectUrl = "../buyer/index.html";
     if (strtolower($user['role'] ?? '') === 'admin') {
         $redirectUrl = "../admin/index.html";
     }
 
-    echo json_encode([
-        "status"   => true,
-        "message"  => "Login berhasil!",
+    json_response(true, "Login berhasil!", [
         "redirect" => $redirectUrl,
         "user"     => $user
-    ]);
+    ], 200);
 
 } catch (PDOException $e) {
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Login error: " . $e->getMessage());
+    json_response(false, "Terjadi gangguan saat memproses login. Silakan coba lagi.", null, 500);
 }
 ?>

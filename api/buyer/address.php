@@ -1,6 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/address.php
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -9,15 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../../config/database.php';
+// 1. Dapatkan user_id terpercaya dari sesi server
+$userId = require_auth();
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 try {
     // 1. Ambil Daftar Semua Alamat Pengguna
     if ($action === 'list') {
-        $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
-
         $stmt = $conn->prepare("
             SELECT 
                 address_id,
@@ -46,7 +45,6 @@ try {
 
     // 2. Simpan atau Ubah Alamat
     if ($action === 'save') {
-        $userId = isset($input['user_id']) ? intval($input['user_id']) : 0;
         $addressId = isset($input['address_id']) ? intval($input['address_id']) : 0;
         $label = trim($input['label'] ?? 'Rumah');
         $recipientName = trim($input['recipient_name'] ?? '');
@@ -60,7 +58,7 @@ try {
         $postalCode = trim($input['postal_code'] ?? '');
         $isDefault = !empty($input['is_default']) || !empty($input['is_primary']) ? 1 : 0;
 
-        if ($userId <= 0 || empty($recipientName) || empty($phone) || empty($city) || empty($streetAddress)) {
+        if (empty($recipientName) || empty($phone) || empty($city) || empty($streetAddress)) {
             echo json_encode(["status" => false, "message" => "Harap lengkapi seluruh field alamat yang wajib!"]);
             exit;
         }
@@ -72,7 +70,7 @@ try {
         }
 
         if ($addressId > 0) {
-            // Update Alamat Terpilih
+            // Update Alamat Terpilih (wajib milik user_id sesi)
             $sql = "UPDATE addresses 
                     SET label = :lbl, recipient_name = :rec, phone = :ph, street_address = :st, city = :ct, province = :prov, postal_code = :pc, is_default = :def 
                     WHERE address_id = :aid AND user_id = :uid";
@@ -121,7 +119,6 @@ try {
 
     // 3. Set Alamat Menjadi Utama (is_default)
     if ($action === 'set_primary') {
-        $userId = isset($input['user_id']) ? intval($input['user_id']) : 0;
         $addressId = isset($input['address_id']) ? intval($input['address_id']) : 0;
 
         $conn->prepare("UPDATE addresses SET is_default = 0 WHERE user_id = :uid")->execute(['uid' => $userId]);
@@ -134,7 +131,6 @@ try {
 
     // 4. Hapus Alamat (Hanya alamat non-default yang boleh dihapus)
     if ($action === 'delete') {
-        $userId = isset($input['user_id']) ? intval($input['user_id']) : 0;
         $addressId = isset($input['address_id']) ? intval($input['address_id']) : 0;
 
         $stmt = $conn->prepare("DELETE FROM addresses WHERE address_id = :aid AND user_id = :uid AND is_default = 0");
@@ -147,6 +143,9 @@ try {
     echo json_encode(["status" => false, "message" => "Aksi tidak dikenali."]);
 
 } catch (PDOException $e) {
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Address error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+    exit;
 }
 ?>

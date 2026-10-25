@@ -1,31 +1,13 @@
 <?php
 // C:/laragon/www/on-shop/api/seller/manage_chats.php
-session_start();
-
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+require_once __DIR__ . '/seller_auth.php';
 header("Content-Type: application/json; charset=UTF-8");
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit;
-}
-
-require_once '../../config/database.php';
 
 $rawInput = file_get_contents("php://input");
 $postData = json_decode($rawInput, true) ?: [];
 
-$sellerUserId = isset($_GET['auth_user_id']) ? (int)$_GET['auth_user_id'] : 
-                (isset($postData['auth_user_id']) ? (int)$postData['auth_user_id'] : 
-                (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0));
-
+$sellerUserId = $user_id;
 $action = isset($_GET['action']) ? trim($_GET['action']) : '';
-
-if (!$sellerUserId) {
-    echo json_encode(["status" => false, "message" => "Sesi penjual tidak valid."]);
-    exit;
-}
 
 try {
     // Pastikan user memiliki toko
@@ -168,6 +150,9 @@ try {
     }
 
 } catch (PDOException $e) {
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Seller manage_chats error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+    exit;
 }
 ?>
