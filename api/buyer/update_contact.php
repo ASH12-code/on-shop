@@ -1,16 +1,9 @@
 <?php
 // api/buyer/update_contact.php
-session_start();
-require_once '../../config/database.php';
+require_once __DIR__ . '/../helpers/auth.php';
 header('Content-Type: application/json; charset=UTF-8');
 
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(["status" => false, "message" => "Sesi login tidak sah atau telah berakhir."]);
-    exit;
-}
-
-$user_id = (int)$_SESSION['user_id'];
+$user_id = require_auth();
 $input   = json_decode(file_get_contents("php://input"), true);
 
 $email = isset($input['email']) ? trim($input['email']) : null;
@@ -80,5 +73,8 @@ try {
     ]);
 
 } catch (PDOException $e) {
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Update contact error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+    exit;
 }

@@ -1,8 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/manage_chats.php
-session_start();
-
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -11,21 +9,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../../config/database.php';
+// 1. Ambil identitas terpercaya dari sesi server
+$authUserId = require_auth();
 
 $rawInput = file_get_contents("php://input");
 $postData = json_decode($rawInput, true) ?: [];
 
-$authUserId = isset($_GET['auth_user_id']) ? (int)$_GET['auth_user_id'] : 
-              (isset($postData['auth_user_id']) ? (int)$postData['auth_user_id'] : 
-              (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0));
-
 $action = isset($_GET['action']) ? trim($_GET['action']) : '';
-
-if (!$authUserId) {
-    echo json_encode(["status" => false, "message" => "Sesi login pembeli tidak valid."]);
-    exit;
-}
 
 try {
     // 1. Inisialisasi Obrolan dari Toko/Produk
@@ -177,6 +167,9 @@ try {
     }
 
 } catch (PDOException $e) {
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Buyer manage_chats error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+    exit;
 }
 ?>

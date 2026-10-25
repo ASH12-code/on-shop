@@ -1,6 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/orders.php
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -9,14 +9,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once __DIR__ . '/../../config/database.php';
-
-$db = isset($conn) ? $conn : (isset($pdo) ? $pdo : null);
+$db = get_db_connection();
 if (!$db) {
     http_response_code(500);
     echo json_encode(["status" => false, "message" => "Koneksi database gagal."]);
     exit;
 }
+
+// 1. Amankan identitas pembeli dari sesi server
+$sessionUserId = require_auth();
 
 $action = $_GET['action'] ?? '';
 
@@ -25,11 +26,7 @@ try {
     // 1. DAFTAR PESANAN PEMBELI LENGKAP DENGAN SENGKETA
     // -------------------------------------------------------------
     if ($action === 'list') {
-        $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
-        if ($userId <= 0) {
-            echo json_encode(["status" => false, "message" => "User ID tidak valid."]);
-            exit;
-        }
+        $userId = $sessionUserId;
 
         $sql = "
             SELECT 
@@ -233,7 +230,7 @@ try {
     // -------------------------------------------------------------
     if ($action === 'confirm_received') {
         $subOrderId = isset($input['sub_order_id']) ? intval($input['sub_order_id']) : 0;
-        $userId     = isset($input['user_id']) ? intval($input['user_id']) : 0;
+        $userId     = $sessionUserId;
 
         $stmtCheck = $db->prepare("
             SELECT 
@@ -246,7 +243,7 @@ try {
             FROM sub_orders so
             JOIN master_orders mo ON so.master_order_id = mo.master_order_id
             JOIN shops s ON so.shop_id = s.shop_id
-            WHERE so.sub_order_id = :sub_id AND (mo.buyer_id = :uid OR :uid_alt = 0)
+            WHERE so.sub_order_id = :sub_id AND mo.buyer_id = :uid
         ");
         $stmtCheck->execute([
             'sub_id'   => $subOrderId, 
@@ -331,12 +328,12 @@ try {
     // -------------------------------------------------------------
     if ($action === 'submit_return') {
         $subOrderId  = isset($input['sub_order_id']) ? intval($input['sub_order_id']) : 0;
-        $userId      = isset($input['user_id']) ? intval($input['user_id']) : 0;
+        $userId      = $sessionUserId;
         $reason      = isset($input['reason']) ? trim($input['reason']) : 'Barang rusak / cacat fisik saat diterima';
         $complaint   = isset($input['complaint']) ? trim($input['complaint']) : '';
         $imageBase64 = isset($input['dispute_image_base64']) ? $input['dispute_image_base64'] : null;
 
-        if ($subOrderId <= 0 || $userId <= 0) {
+        if ($subOrderId <= 0) {
             echo json_encode(["status" => false, "message" => "Data pengajuan tidak valid."]);
             exit;
         }
@@ -424,9 +421,9 @@ try {
     // -------------------------------------------------------------
     if ($action === 'confirm_return_shipping') {
         $subOrderId = isset($input['sub_order_id']) ? intval($input['sub_order_id']) : 0;
-        $userId     = isset($input['user_id']) ? intval($input['user_id']) : 0;
+        $userId     = $sessionUserId;
 
-        if ($subOrderId <= 0 || $userId <= 0) {
+        if ($subOrderId <= 0) {
             echo json_encode(["status" => false, "message" => "Data tidak lengkap."]);
             exit;
         }
@@ -585,7 +582,7 @@ try {
     if ($action === 'submit_review') {
         $subOrderId  = isset($input['sub_order_id']) ? intval($input['sub_order_id']) : 0;
         $productId   = isset($input['product_id']) ? intval($input['product_id']) : 0;
-        $userId      = isset($input['user_id']) ? intval($input['user_id']) : 0;
+        $userId      = $sessionUserId;
         $rating      = isset($input['rating']) ? intval($input['rating']) : 5;
         $comment     = isset($input['comment']) ? trim($input['comment']) : '';
         $imageBase64 = isset($input['review_image_base64']) ? $input['review_image_base64'] : null;
@@ -645,6 +642,8 @@ try {
     if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
     }
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Orders error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
     exit;
 }

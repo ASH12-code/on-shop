@@ -1,30 +1,7 @@
 <?php
 // C:/laragon/www/on-shop/api/seller/get_dashboard_data.php
-session_start();
+require_once __DIR__ . '/seller_auth.php';
 header('Content-Type: application/json; charset=UTF-8');
-require_once '../../config/database.php';
-
-$db = isset($conn) ? $conn : (isset($pdo) ? $pdo : null);
-
-if (!$db) {
-    http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Koneksi database gagal."]);
-    exit;
-}
-
-// Fallback otomatis ke shop_id = 5 (Toko Budi2 Official) atau dari parameter auth
-$shop_id = (!empty($_SESSION['shop_id'])) ? (int)$_SESSION['shop_id'] : 5;
-
-// Jika dikirim auth_user_id dari frontend, cocokkan shop_id pemiliknya
-if (!empty($_GET['auth_user_id'])) {
-    $authUserId = (int)$_GET['auth_user_id'];
-    $stmtAuthShop = $db->prepare("SELECT shop_id FROM shops WHERE user_id = ? LIMIT 1");
-    $stmtAuthShop->execute([$authUserId]);
-    $foundShopId = $stmtAuthShop->fetchColumn();
-    if ($foundShopId) {
-        $shop_id = (int)$foundShopId;
-    }
-}
 
 $sales_period    = $_GET['sales_period'] ?? 'daily';
 $products_period = $_GET['products_period'] ?? 'all_time';
@@ -176,7 +153,8 @@ try {
     exit;
 
 } catch (Exception $e) {
+    error_log("Seller get_dashboard_data error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
     exit;
 }

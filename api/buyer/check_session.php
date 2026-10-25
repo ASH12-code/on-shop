@@ -1,7 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/check_session.php
 session_start();
-header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");

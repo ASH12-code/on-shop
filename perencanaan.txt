@@ -1,0 +1,103 @@
+Siap, ASH. Ini rencana perbaikan Onshop dengan PHP native, dalam 6 minggu. Desain dan database MySQL (phpMyAdmin Laragon) tetap dipertahankan.
+
+## Prinsip kerja
+
+- **Desain tidak diubah.** CSS lama dipertahankan. Perubahan visual hanya untuk responsivitas dan komponen baru, dengan gaya yang sama.
+- **Satu pola keamanan untuk semua endpoint:** `user_id`, `role`, dan `shop_id` selalu dari session, tidak pernah dari browser.
+- **Semua perubahan database lewat file migrasi** (`database/migrations/001_...sql`, dst.), jadi mudah diulang di komputer lain dan bisa dilampirkan ke laporan.
+- **Cadangkan dulu:** salin folder proyek dan ekspor database sebelum minggu 1.
+
+## Perubahan database (dikumpulkan di satu tempat)
+
+| Migrasi | Isi |
+|---|---|
+| 001 | Pastikan `users.password` minimal `VARCHAR(255)` (hash bcrypt panjang 60) |
+| 002 | `shipping_rates` (kurir, layanan, provinsi asal/tujuan, tarif per kg, estimasi hari) dan kolom provinsi asal di `shops` |
+| 003 | `payments`: tambah `proof_url`, `proof_uploaded_at`, `verified_by`, `verified_at`, `reject_reason`; tambah status `MENUNGGU_VERIFIKASI` dan `DITOLAK` |
+| 004 | `password_resets` (token lupa password) |
+| 005 | Indeks untuk query dashboard (`sub_orders.created_at`, `order_items.product_id`) |
+
+Tabel `wishlists`, `platform_settings`, dan `admin_audit_logs` sudah ada, jadi tidak perlu dibuat.
+
+## Minggu 1: Fondasi keamanan
+
+**Tugas**
+1. Buat folder `api/helpers/` berisi `auth.php`, `csrf.php`, `upload.php`, `response.php` (format JSON seragam).
+2. Hash password: ubah `auth_register.php`, hapus perbandingan teks polos di `auth_login.php`. Skrip `database/migrate_hash_passwords.php` mengubah password lama menjadi hash (dijalankan sekali, lalu dihapus).
+3. Pasang `require_role('admin')` di seluruh 12 file `api/admin/*.php`. Hapus `Access-Control-Allow-Origin: *`.
+4. Ganti `user_id` dari `$_GET/$_POST/JSON` menjadi session di: `cart.php`, `address.php`, `orders.php`, `checkout.php`, `vouchers.php`, `open_shop.php`, `upload_avatar.php`, `update_contact.php`, `help_ticket.php`, `manage_chats.php`, `profile.php`.
+5. Rapikan endpoint penjual: pastikan semua file `api/seller/*` memakai `seller_auth.php` (saat ini `manage_catalog`, `manage_reviews`, `manage_shop_settings`, `manage_wallet` belum terlihat memakai session langsung).
+6. `upload.php`: validasi isi gambar dengan `getimagesize`, nama file acak, izin folder `0755`. Pakai di avatar, produk, dan logo toko.
+7. Pembersihan: hapus `test-opsi-a/b.html`, `uji-coba/`, gabungkan file duplikat. Sembunyikan pesan error DB dari pengguna dan buat user DB khusus selain `root`.
+
+**Selesai bila:** memanggil API admin tanpa login ditolak (401/403), pembeli A tidak bisa melihat atau mengubah data pembeli B, dan login hanya menerima password ter-hash.
+
+## Minggu 2: Captcha dan ongkir simulasi
+
+**Tugas**
+1. Turnstile: `login.html`, `register.html`, `login.js`, `register.js`, plus `api/helpers/captcha.php` yang memverifikasi token di server pada `auth_login.php` dan `auth_register.php`. Gunakan kunci uji Turnstile selama pengembangan.
+2. Ongkir simulasi: `api/helpers/shipping.php` menghitung dari tabel `shipping_rates` (berat total × tarif per kg per rute provinsi). Endpoint `api/buyer/get_shipping_cost.php` mengembalikan opsi kurir (JNE, J&T, SiCepat) beserta biaya dan estimasi.
+3. `checkout.php`: **hitung ulang ongkir dan total di server**, abaikan angka dari browser. Hapus nilai bawaan 15.000 dan "JNE".
+4. `checkout.js` dan `checkout.html`: tampilkan pilihan kurir dari endpoint, ringkasan biaya (subtotal, ongkir, diskon voucher, total) diperbarui otomatis.
+5. `pengaturan-toko.*` dan `manage_shop_settings.php`: penjual mengisi provinsi asal toko. Isi data tarif awal (seed) untuk provinsi yang dipakai di demo.
+
+**Selesai bila:** mengubah ongkir lewat DevTools tidak memengaruhi total akhir, dan login/register gagal tanpa captcha valid.
+
+## Minggu 3: Pembayaran upload, diverifikasi penjual
+
+**Alur:** pembeli checkout → status `MENUNGGU_BAYAR` → upload bukti → `MENUNGGU_VERIFIKASI` → penjual setuju → `DIKEMAS` (atau tolak dengan alasan, pembeli upload ulang).
+
+**Tugas**
+1. `api/buyer/upload_payment_proof.php`: hanya pemilik pesanan, validasi gambar (maks. 2 MB), simpan di `uploads/payment-proofs/`. Tambahkan `.htaccess` agar folder tidak bisa diakses langsung, dan sajikan file lewat skrip `api/files/payment_proof.php` yang mengecek hak akses (pembeli pemilik atau penjual toko terkait).
+2. `pembayaran-qris.html/js` dan `pembayaran-va.html/js`: ganti tombol simulasi "bayar sukses" dengan form upload bukti. Hapus ketergantungan pada `api.qrserver.com` (tampilkan gambar QR statis milik Onshop agar tidak bergantung situs luar).
+3. Sisi penjual: `manage_orders.php` dan `kelola-pesanan.html/js` ditambah tab "Menunggu Verifikasi", pratinjau bukti, tombol Setujui/Tolak.
+4. `orders.php` dan `pesanan-saya.js`: tampilkan status verifikasi dan alasan penolakan.
+5. Catat tiap verifikasi (siapa, kapan) agar bisa diaudit admin bila terjadi dispute.
+
+**Selesai bila:** pesanan tidak bisa menjadi `DIKEMAS` tanpa bukti yang disetujui penjual, dan penjual lain tidak bisa melihat bukti milik toko lain.
+
+## Minggu 4: Dashboard admin dan dashboard pembeli
+
+**Admin** (`get_dashboard_analytics.php`, `pages/admin/index.html`, `index-admin.js`, `index-admin.css`)
+- Pertahankan: GMV, komisi, jumlah order, merchant aktif, grafik, transaksi terbaru.
+- Tambah: **jumlah sales**, **jumlah pembeli** (total dan baru per periode), **produk terlaris** (top 5 dari `order_items`), **top seller** (top 5 dari `sub_orders` per toko).
+- Semua mengikuti filter periode yang sudah ada.
+
+**Pembeli** (`akun.html/js/css`, `orders.php`)
+- Ringkasan di bagian atas: total pesanan, pesanan berjalan, total belanja.
+- Daftar riwayat pembelian terbaru dengan status dan tombol ke detail.
+- `riwayat-pesanan.*` dihapus karena digantikan, dan semua tautan lamanya diarahkan ke `pesanan-saya`.
+
+**Selesai bila:** angka dashboard cocok dengan hitungan manual di phpMyAdmin.
+
+## Minggu 5: Mobile, navigasi, ukuran
+
+1. **Responsif:** tambah `@media` di 12 CSS yang masih kosong (CSS admin ×6, `qris`, `va`, `pengiriman`, `riwayat-pesanan`, `daftar-alamat`, `daftar-produk`) dan meta viewport di `pengiriman.html`. Uji di lebar 360, 768, dan 1280 px.
+2. **Navigasi:** navbar atau tombol kembali di `daftar-alamat`, `pengiriman`, `login`, `register`. Menu hamburger di panel admin dan seller. Tambah breadcrumb di halaman detail dan checkout.
+3. **Ukuran:** konversi `banner.png` (3,4 MB) ke WebP, perkecil gambar dummy besar, `loading="lazy"` pada gambar produk, minify CSS/JS untuk versi rilis.
+
+**Selesai bila:** semua halaman utama nyaman dipakai di layar HP tanpa scroll horizontal, dan halaman beranda berukuran jauh lebih kecil dari sebelumnya.
+
+## Minggu 6: Kelengkapan, uji, dokumentasi
+
+1. **Pembeli:** halaman wishlist (tabel sudah ada), lupa password (`password_resets`, tautan reset disimulasikan di layar karena belum ada server email).
+2. **Admin:** halaman pengaturan platform (`platform_settings`) dan halaman audit log (`admin_audit_logs`).
+3. **Uji per peran:** skenario lengkap dari register sampai selesai: pembeli belanja dan upload bukti → penjual verifikasi dan kirim → pembeli menerima dan beri ulasan → penjual tarik saldo → admin proses payout dan lihat dashboard.
+4. **Uji keamanan sederhana:** coba akses API tanpa login, ganti `user_id`, unggah file bukan gambar, dan ubah harga atau ongkir lewat DevTools.
+5. **Dokumentasi:** `README` cara menjalankan di Laragon, daftar akun uji, dan catatan bahwa ongkir adalah simulasi.
+
+## Risiko dan cadangan
+
+| Risiko | Antisipasi |
+|---|---|
+| Minggu 1 melebar karena banyak endpoint | Kerjakan berurutan: admin dan pembayaran dulu, sisanya menyusul |
+| Turnstile butuh internet dan akun Cloudflare | Gunakan kunci uji resmi saat pengembangan |
+| Jadwal mundur | Yang dikurangi: wishlist, pengaturan admin, minify. **Tidak dikurangi:** keamanan, ongkir, bukti bayar, dashboard |
+
+## Ringkasan beban kerja
+
+- **File baru:** sekitar 12 (helper, endpoint, migrasi)
+- **File diubah:** sekitar 70 (±35 API, ±25 halaman dan JS, ±15 CSS)
+- **File dihapus/digabung:** sekitar 8
+
+Kalau ASH setuju, saya bisa lanjutkan dengan **pemecahan minggu 1 menjadi daftar centang per file** beserta isi `auth.php` dan pola yang dipakai ulang di semua endpoint. Rencana ini juga bisa saya jadikan dokumen terpisah yang bisa disimpan dan dibagikan ke dosen kalau dibutuhkan.

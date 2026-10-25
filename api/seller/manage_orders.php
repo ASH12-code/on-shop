@@ -1,20 +1,9 @@
 <?php
 // C:/laragon/www/on-shop/api/seller/manage_orders.php
-session_start();
+require_once __DIR__ . '/seller_auth.php';
 header('Content-Type: application/json; charset=UTF-8');
-require_once '../../config/database.php';
 
-$db = isset($conn) ? $conn : (isset($pdo) ? $pdo : null);
-
-if (!$db) {
-    http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Koneksi database gagal."]);
-    exit;
-}
-
-// Fallback otomatis ke shop_id = 5 (Toko Budi2 Official)
-$shop_id = (!empty($_SESSION['shop_id'])) ? (int)$_SESSION['shop_id'] : 5;
-$action  = $_GET['action'] ?? 'get_orders';
+$action = $_GET['action'] ?? 'get_orders';
 
 try {
     // -------------------------------------------------------------
@@ -127,7 +116,9 @@ try {
     }
 
 } catch (Exception $e) {
+    error_log("Seller manage_orders error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Kesalahan Database: " . $e->getMessage()]);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
     exit;
 }
+?>

@@ -1,15 +1,16 @@
 <?php
-// C:/laragon/www/on-shop/api/buyer/auth_register.php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json; charset=UTF-8");
+// api/buyer/auth_register.php
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../helpers/response.php';
+require_once __DIR__ . '/../../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
-
-require_once '../../config/database.php';
 
 $input = json_decode(file_get_contents("php://input"), true);
 
@@ -20,14 +21,16 @@ $password = isset($input['password']) ? trim($input['password']) : '';
 
 // 1. Validasi Nama & Password wajib ada
 if (empty($name) || empty($password)) {
-    echo json_encode(["status" => false, "message" => "Nama lengkap dan kata sandi wajib diisi!"]);
-    exit;
+    json_response(false, "Nama lengkap dan kata sandi wajib diisi!", null, 400);
+}
+
+if (strlen($password) < 6) {
+    json_response(false, "Kata sandi minimal 6 karakter!", null, 400);
 }
 
 // 2. Minimal salah satu dari Email atau Telepon wajib terisi
 if (empty($email) && empty($phone)) {
-    echo json_encode(["status" => false, "message" => "Harap isi minimal salah satu: Email atau Nomor Telepon!"]);
-    exit;
+    json_response(false, "Harap isi minimal salah satu: Email atau Nomor Telepon!", null, 400);
 }
 
 try {
@@ -36,8 +39,7 @@ try {
         $stmtCheckEmail = $conn->prepare("SELECT user_id FROM users WHERE email = :email LIMIT 1");
         $stmtCheckEmail->execute(['email' => $email]);
         if ($stmtCheckEmail->fetch()) {
-            echo json_encode(["status" => false, "message" => "Email tersebut sudah terdaftar!"]);
-            exit;
+            json_response(false, "Email tersebut sudah terdaftar!", null, 409);
         }
     }
 
@@ -46,8 +48,7 @@ try {
         $stmtCheckPhone = $conn->prepare("SELECT user_id FROM users WHERE phone = :phone LIMIT 1");
         $stmtCheckPhone->execute(['phone' => $phone]);
         if ($stmtCheckPhone->fetch()) {
-            echo json_encode(["status" => false, "message" => "Nomor telepon tersebut sudah terdaftar!"]);
-            exit;
+            json_response(false, "Nomor telepon tersebut sudah terdaftar!", null, 409);
         }
     }
 
@@ -56,11 +57,13 @@ try {
     $totalUser = (int)$countQuery->fetchColumn() + 1;
     $userCode = "USR-" . str_pad($totalUser, 3, "0", STR_PAD_LEFT);
 
-    // KUNCI PERBAIKAN: Jika kosong, simpan sebagai NULL agar tidak melanggar batasan UNIQUE
     $saveEmail = !empty($email) ? $email : null;
     $savePhone = !empty($phone) ? $phone : null;
 
-    // 6. Simpan ke database
+    // 6. Enkripsi password menggunakan BCRYPT
+    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
+    // 7. Simpan ke database
     $insertSql = "INSERT INTO users (user_code, name, email, phone, password, role, has_shop) 
                   VALUES (:code, :name, :email, :phone, :pass, 'buyer', 0)";
     
@@ -70,12 +73,16 @@ try {
         'name'  => $name,
         'email' => $saveEmail,
         'phone' => $savePhone,
-        'pass'  => $password
+        'pass'  => $hashedPassword
     ]);
 
     $newUserId = (int)$conn->lastInsertId();
 
-    // 7. Data sesi login
+    // 8. Set session pengguna baru
+    $_SESSION['user_id']  = $newUserId;
+    $_SESSION['role']     = 'buyer';
+    $_SESSION['has_shop'] = 0;
+
     $userData = [
         "user_id"   => $newUserId,
         "user_code" => $userCode,
@@ -86,13 +93,10 @@ try {
         "has_shop"  => 0
     ];
 
-    echo json_encode([
-        "status"  => true,
-        "message" => "Pendaftaran berhasil!",
-        "user"    => $userData
-    ]);
+    json_response(true, "Pendaftaran berhasil!", ["user" => $userData], 201);
 
 } catch (PDOException $e) {
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Registration error: " . $e->getMessage());
+    json_response(false, "Terjadi kesalahan saat memproses pendaftaran. Silakan coba lagi.", null, 500);
 }
 ?>

@@ -1,6 +1,6 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/vouchers.php
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . '/../helpers/auth.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -9,19 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once '../../config/database.php';
+// 1. Ambil user_id dari sesi server yang aman
+$userId = require_auth();
 
 $action = $_GET['action'] ?? '';
 
 try {
     // AMBIL DAFTAR VOUCHER UNTUK CHECKOUT
     if ($action === 'get_applicable_vouchers') {
-        $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
-        if ($userId <= 0) {
-            echo json_encode(["status" => false, "message" => "User ID tidak valid.", "data" => []]);
-            exit;
-        }
-
         $sql = "
             SELECT 
                 uv.user_voucher_id,
@@ -71,5 +66,9 @@ try {
     echo json_encode(["status" => false, "message" => "Aksi tidak dikenali."]);
 
 } catch (PDOException $e) {
-    echo json_encode(["status" => false, "message" => "Database Error: " . $e->getMessage()]);
+    error_log("Vouchers error: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan pada sistem."]);
+    exit;
 }
+?>
