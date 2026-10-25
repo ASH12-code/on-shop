@@ -62,6 +62,23 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Ambil Token Cloudflare Turnstile
+    let turnstileToken = "";
+    if (typeof turnstile !== "undefined") {
+      turnstileToken = turnstile.getResponse() || "";
+    }
+    if (!turnstileToken) {
+      const turnstileInput = document.querySelector('[name="cf-turnstile-response"]');
+      if (turnstileInput) turnstileToken = turnstileInput.value;
+    }
+
+    if (!turnstileToken) {
+      if (typeof showToast === "function") {
+        showToast("Harap selesaikan verifikasi captcha Turnstile!", "warning");
+      }
+      return;
+    }
+
     const btn = document.getElementById("btnRegSubmit");
     if (btn) {
       btn.disabled = true;
@@ -76,7 +93,8 @@ document.addEventListener("DOMContentLoaded", () => {
           name: fullname, 
           email: email, 
           phone: phone, 
-          password: password 
+          password: password,
+          turnstile_token: turnstileToken
         })
       });
 
@@ -97,11 +115,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof showToast === "function") {
           showToast(data.message || "Pendaftaran gagal. Silakan coba lagi.", "error");
         }
+        if (typeof turnstile !== "undefined") {
+          turnstile.reset();
+        }
       }
     } catch (err) {
       console.error("Gagal mendaftar:", err);
       if (typeof showToast === "function") {
         showToast("Terjadi kendala koneksi server saat pendaftaran.", "error");
+      }
+      if (typeof turnstile !== "undefined") {
+        turnstile.reset();
       }
     } finally {
       if (btn) {

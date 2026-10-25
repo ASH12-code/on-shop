@@ -57,6 +57,8 @@ async function loadShopSettings() {
     const s = result.data;
     document.getElementById("shopName").value        = s.shop_name || "";
     document.getElementById("shopDescription").value = s.description || "";
+    const provEl = document.getElementById("pickupProvince");
+    if (provEl) provEl.value = s.pickup_province || "Kepulauan Bangka Belitung";
     document.getElementById("pickupCity").value      = s.pickup_city || "";
     document.getElementById("pickupAddress").value   = s.pickup_address || "";
     
@@ -251,12 +253,14 @@ async function handleSaveSettings(e) {
   const storedUser = JSON.parse(localStorage.getItem("currentUser")) || {};
   const authQuery = storedUser.user_id ? `?auth_user_id=${storedUser.user_id}` : "";
 
+  const provEl = document.getElementById("pickupProvince");
   const payload = {
-    shop_name:      document.getElementById("shopName").value.trim(),
-    description:    document.getElementById("shopDescription").value.trim(),
-    pickup_city:    document.getElementById("pickupCity").value.trim(),
-    pickup_address: document.getElementById("pickupAddress").value.trim(),
-    logo_url:       currentLogoData
+    shop_name:       document.getElementById("shopName").value.trim(),
+    description:     document.getElementById("shopDescription").value.trim(),
+    pickup_province: provEl ? provEl.value.trim() : "Kepulauan Bangka Belitung",
+    pickup_city:     document.getElementById("pickupCity").value.trim(),
+    pickup_address:  document.getElementById("pickupAddress").value.trim(),
+    logo_url:        currentLogoData
   };
 
   try {
