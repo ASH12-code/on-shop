@@ -1,6 +1,7 @@
 <?php
 // C:/laragon/www/on-shop/api/buyer/checkout.php
 require_once __DIR__ . '/../helpers/auth.php';
+require_once __DIR__ . '/../helpers/shipping.php';
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
@@ -96,13 +97,19 @@ try {
         $verifiedShops = [];
         $usedUserVoucherIds = [];
 
-        // 4. Verifikasi Produk, Ongkir, dan Pemotongan Voucher Per Toko
+        // 4. Verifikasi Produk, Ongkir Mandiri, dan Pemotongan Voucher Per Toko
         foreach ($shops as $shop) {
             $shopId = intval($shop['shop_id'] ?? 0);
-            $shippingCost = isset($shop['shipping_cost']) ? floatval($shop['shipping_cost']) : 15000.00;
+
+            // Ambil data toko untuk lokasi asal gudang/pickup
+            $stmtShopInfo = $conn->prepare("SELECT pickup_province, pickup_city, shop_name FROM shops WHERE shop_id = :sid LIMIT 1");
+            $stmtShopInfo->execute(['sid' => $shopId]);
+            $shopDb = $stmtShopInfo->fetch(PDO::FETCH_ASSOC);
+            $shopOriginProv = !empty($shopDb['pickup_province']) ? $shopDb['pickup_province'] : 'Kepulauan Bangka Belitung';
 
             $verifiedItems = [];
             $shopGross = 0.00;
+            $shopTotalWeightGrams = 0;
 
             foreach ($shop['items'] as $item) {
                 $pid = intval($item['product_id'] ?? 0);
@@ -112,6 +119,7 @@ try {
                 if ($vid) {
                     $stmtPrice = $conn->prepare("
                         SELECT pv.price, pv.stock, pv.variant_combination, p.name AS product_name,
+                               COALESCE(p.weight_grams, 500) AS weight_grams,
                                COALESCE(
                                    pv.image_url,
                                    (SELECT image_url FROM product_images WHERE product_id = p.product_id AND is_primary = 1 LIMIT 1),
@@ -128,6 +136,7 @@ try {
                     $stmtPrice = $conn->prepare("
                         SELECT COALESCE(MIN(pv.price), 0) AS price, COALESCE(SUM(pv.stock), 10) AS stock,
                                'Standar' AS variant_combination, p.name AS product_name,
+                               COALESCE(p.weight_grams, 500) AS weight_grams,
                                COALESCE(
                                    (SELECT image_url FROM product_images WHERE product_id = p.product_id AND is_primary = 1 LIMIT 1),
                                    'https://placehold.co/100x100/2e8b57/ffffff?text=Produk'
@@ -135,7 +144,7 @@ try {
                         FROM products p
                         LEFT JOIN product_variants pv ON p.product_id = pv.product_id
                         WHERE p.product_id = :pid
-                        GROUP BY p.product_id, p.name
+                        GROUP BY p.product_id, p.name, p.weight_grams
                         LIMIT 1
                     ");
                     $stmtPrice->execute(['pid' => $pid]);
@@ -161,6 +170,9 @@ try {
                 $itemSubtotal = $officialPrice * $qty;
                 $shopGross += $itemSubtotal;
 
+                $weightPerUnit = max(100, intval($prodMeta['weight_grams'] ?? 500));
+                $shopTotalWeightGrams += $weightPerUnit * $qty;
+
                 $verifiedItems[] = [
                     'product_id'   => $pid,
                     'variant_id'   => $vid,
@@ -176,6 +188,38 @@ try {
                     $cartIdsToDelete[] = intval($item['cart_id']);
                 }
             }
+
+            // Hitung Ongkos Kirim Resmi di Server (Anti-Tampering)
+            $courierCode = trim($shop['courier_code'] ?? '');
+            $serviceCode = trim($shop['service_code'] ?? '');
+            if (empty($courierCode)) {
+                $rawCourier = trim($shop['courier_name'] ?? 'JNE');
+                if (stripos($rawCourier, 'J&T') !== false || stripos($rawCourier, 'JNT') !== false) {
+                    $courierCode = 'JNT';
+                    $serviceCode = 'EZ';
+                } elseif (stripos($rawCourier, 'SiCepat') !== false) {
+                    $courierCode = 'SICEPAT';
+                    $serviceCode = 'SIUNT';
+                } else {
+                    $courierCode = 'JNE';
+                    $serviceCode = 'REG';
+                }
+            }
+            if (empty($serviceCode)) {
+                $serviceCode = ($courierCode === 'JNT') ? 'EZ' : (($courierCode === 'SICEPAT') ? 'SIUNT' : 'REG');
+            }
+
+            $shippingCalc = calculate_shop_shipping(
+                $conn,
+                $shopOriginProv,
+                $addr['province'],
+                $shopTotalWeightGrams,
+                $courierCode,
+                $serviceCode
+            );
+            $shippingCost   = floatval($shippingCalc['shipping_cost']);
+            $courierName    = $shippingCalc['courier_name'];
+            $courierService = $shippingCalc['service_name'];
 
             // A. Diskon Voucher Toko (Hanya Produk, Maksimal 1 Voucher per Toko)
             $shopVoucherDiscount = 0.00;
@@ -213,7 +257,7 @@ try {
                 }
             }
 
-            // C. Diskon Voucher Gratis Ongkir (Toko Ini - Boleh Rp 0)
+            // C. Diskon Voucher Gratis Ongkir (Toko Ini - Dihitung Terhadap Ongkir Server Sah)
             $shippingDiscount = 0.00;
             $shipUVId = !empty($shop['shipping_voucher_id']) ? intval($shop['shipping_voucher_id']) : null;
             if ($shipUVId && isset($vouchersKeyed[$shipUVId]) && !in_array($shipUVId, $usedUserVoucherIds)) {
@@ -247,8 +291,8 @@ try {
                 'shop_voucher_discount' => $shopVoucherDiscount,
                 'platform_discount'     => $platformDiscount,
                 'shipping_discount'     => $shippingDiscount,
-                'courier_name'          => trim($shop['courier_name'] ?? 'JNE'),
-                'courier_service'       => trim($shop['courier_service'] ?? 'Reguler (2-3 Hari)'),
+                'courier_name'          => $courierName,
+                'courier_service'       => $courierService,
                 'shop_gross'            => $shopGross,
                 'items'                 => $verifiedItems
             ];

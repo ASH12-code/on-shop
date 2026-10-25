@@ -27,15 +27,20 @@ try {
     if ($action === 'update_settings') {
         $input = json_decode(file_get_contents('php://input'), true);
 
-        $shop_name      = trim($input['shop_name'] ?? '');
-        $description    = trim($input['description'] ?? '');
-        $pickup_city    = trim($input['pickup_city'] ?? '');
-        $pickup_address = trim($input['pickup_address'] ?? '');
-        $raw_logo       = trim($input['logo_url'] ?? '');
+        $shop_name       = trim($input['shop_name'] ?? '');
+        $description     = trim($input['description'] ?? '');
+        $pickup_city     = trim($input['pickup_city'] ?? '');
+        $pickup_province = trim($input['pickup_province'] ?? '');
+        $pickup_address  = trim($input['pickup_address'] ?? '');
+        $raw_logo        = trim($input['logo_url'] ?? '');
 
         if (empty($shop_name)) {
             echo json_encode(["status" => false, "message" => "Nama toko tidak boleh kosong."]);
             exit;
+        }
+
+        if (empty($pickup_province)) {
+            $pickup_province = 'Kepulauan Bangka Belitung';
         }
 
         // Ambil logo sebelumnya
@@ -66,18 +71,20 @@ try {
             SET shop_name = :shop_name, 
                 description = :description, 
                 pickup_city = :pickup_city, 
+                pickup_province = :pickup_province,
                 pickup_address = :pickup_address, 
                 logo_url = :logo_url
             WHERE shop_id = :shop_id
         ");
 
         $stmt->execute([
-            ':shop_name'      => $shop_name,
-            ':description'    => $description,
-            ':pickup_city'    => $pickup_city,
-            ':pickup_address' => $pickup_address,
-            ':logo_url'       => $finalLogoPath,
-            ':shop_id'        => $shop_id
+            ':shop_name'       => $shop_name,
+            ':description'     => $description,
+            ':pickup_city'     => $pickup_city,
+            ':pickup_province' => $pickup_province,
+            ':pickup_address'  => $pickup_address,
+            ':logo_url'        => $finalLogoPath,
+            ':shop_id'         => $shop_id
         ]);
 
         echo json_encode([

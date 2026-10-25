@@ -7,6 +7,8 @@
     <!-- CSS Register & Toast Universal -->
     <link rel="stylesheet" href="../../assets/css/buyer-css/register.css" />
     <link rel="stylesheet" href="../../assets/css/buyer-css/toast.css" />
+    <!-- Cloudflare Turnstile API -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
 
@@ -126,6 +128,11 @@
                             />
                         </button>
                     </div>
+                </div>
+
+                <!-- Proteksi Bot Cloudflare Turnstile -->
+                <div class="turnstile-container" style="margin-bottom: 16px; display: flex; justify-content: center; min-height: 65px;">
+                    <div class="cf-turnstile" data-sitekey="1x00000000000000000000AA" data-theme="light"></div>
                 </div>
 
                 <button type="submit" class="btn-auth-submit" id="btnRegSubmit">

@@ -56,6 +56,23 @@ document.addEventListener("DOMContentLoaded", () => {
       return false;
     }
 
+    // Ambil Token Cloudflare Turnstile
+    let turnstileToken = "";
+    if (typeof turnstile !== "undefined") {
+      turnstileToken = turnstile.getResponse() || "";
+    }
+    if (!turnstileToken) {
+      const turnstileInput = document.querySelector('[name="cf-turnstile-response"]');
+      if (turnstileInput) turnstileToken = turnstileInput.value;
+    }
+
+    if (!turnstileToken) {
+      if (typeof showToast === "function") {
+        showToast("Harap selesaikan verifikasi captcha Turnstile!", "warning");
+      }
+      return false;
+    }
+
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.innerText = "Memverifikasi...";
@@ -65,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch(getLoginApiUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, turnstile_token: turnstileToken })
       });
 
       const result = await response.json();
@@ -105,6 +122,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof showToast === "function") {
           showToast(result.message || "Data akun atau kata sandi tidak cocok!", "error");
         }
+        if (typeof turnstile !== "undefined") {
+          turnstile.reset();
+        }
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.innerText = "Masuk";
@@ -114,6 +134,9 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Login Error:", err);
       if (typeof showToast === "function") {
         showToast("Koneksi gagal. Pastikan Apache & MySQL aktif.", "error");
+      }
+      if (typeof turnstile !== "undefined") {
+        turnstile.reset();
       }
       if (submitBtn) {
         submitBtn.disabled = false;

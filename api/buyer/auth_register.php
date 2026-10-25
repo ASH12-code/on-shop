@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../helpers/response.php';
+require_once __DIR__ . '/../helpers/captcha.php';
 require_once __DIR__ . '/../../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -14,10 +15,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $input = json_decode(file_get_contents("php://input"), true);
 
-$name     = isset($input['name']) ? trim($input['name']) : '';
-$email    = isset($input['email']) ? trim($input['email']) : '';
-$phone    = isset($input['phone']) ? trim($input['phone']) : '';
-$password = isset($input['password']) ? trim($input['password']) : '';
+$name           = isset($input['name']) ? trim($input['name']) : '';
+$email          = isset($input['email']) ? trim($input['email']) : '';
+$phone          = isset($input['phone']) ? trim($input['phone']) : '';
+$password       = isset($input['password']) ? trim($input['password']) : '';
+$turnstileToken = isset($input['turnstile_token']) ? trim($input['turnstile_token']) : '';
+
+// 0. Validasi Proteksi Bot Turnstile
+if (!verify_turnstile($turnstileToken, $_SERVER['REMOTE_ADDR'] ?? null)) {
+    json_response(false, "Verifikasi keamanan captcha gagal atau kedaluwarsa. Silakan coba lagi.", null, 400);
+}
 
 // 1. Validasi Nama & Password wajib ada
 if (empty($name) || empty($password)) {

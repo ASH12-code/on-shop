@@ -306,6 +306,24 @@ function renderCheckoutShops() {
       </div>
     `;
 
+    // PILIHAN EKSPEDISI KURIR DINAMIS DARI SERVER
+    let shippingOptionsHtml = '';
+    if (shop.shipping_options && shop.shipping_options.length > 0) {
+      shippingOptionsHtml = shop.shipping_options.map((opt) => {
+        const isSelected = (opt.courier_code === shop.courier_code && opt.service_code === shop.service_code) ||
+                           (Math.abs(opt.total_cost - shop.shipping_cost) < 0.1 && !shop.courier_code);
+        return `<option value="${opt.total_cost}|${opt.courier_code}|${opt.service_code}|${escapeHtml(opt.courier_name)}|${escapeHtml(opt.service_name)}" ${isSelected ? 'selected' : ''}>
+          ${escapeHtml(opt.label)} - Est. ${escapeHtml(opt.etd_days)}
+        </option>`;
+      }).join('');
+    } else {
+      shippingOptionsHtml = `
+        <option value="15000|JNE|REG|JNE Express|Reguler (2-3 Hari)" ${shop.shipping_cost === 15000 ? 'selected' : ''}>JNE Reguler (Rp 15.000)</option>
+        <option value="22000|JNT|EZ|J&T Express|EZ Express (1-2 Hari)" ${shop.shipping_cost === 22000 ? 'selected' : ''}>J&T Express (Rp 22.000)</option>
+        <option value="10000|SICEPAT|SIUNT|SiCepat Ekspres|SiUntung Hemat (3-5 Hari)" ${shop.shipping_cost === 10000 ? 'selected' : ''}>SiCepat Hemat (Rp 10.000)</option>
+      `;
+    }
+
     shopCard.innerHTML = `
       <div class="shop-meta-header">
         <span>🏪 ${escapeHtml(shop.shop_name)}</span>
@@ -322,9 +340,7 @@ function renderCheckoutShops() {
         <div>
           <label style="font-size: 12px; font-weight: bold; color: #555; display: block; margin-bottom: 4px;">Pilihan Ekspedisi:</label>
           <select class="shipping-select" onchange="handleShippingChange(${shopIdx}, this.value)">
-            <option value="15000|JNE|Reguler (2-3 Hari)" ${shop.shipping_cost === 15000 ? 'selected' : ''}>JNE Reguler (Rp 15.000)</option>
-            <option value="22000|J&T|Express (1-2 Hari)" ${shop.shipping_cost === 22000 ? 'selected' : ''}>J&T Express (Rp 22.000)</option>
-            <option value="10000|SiCepat|Hemat (3-5 Hari)" ${shop.shipping_cost === 10000 ? 'selected' : ''}>SiCepat Hemat (Rp 10.000)</option>
+            ${shippingOptionsHtml}
           </select>
         </div>
         <div style="text-align: right;">
@@ -343,13 +359,17 @@ function renderCheckoutShops() {
 
 function handleShippingChange(shopIdx, selectVal) {
   const parts = selectVal.split("|");
-  const cost = parseFloat(parts[0]);
-  const courier = parts[1];
-  const service = parts[2];
+  const cost = parseFloat(parts[0]) || 0;
+  const courierCode = parts[1] || "JNE";
+  const serviceCode = parts[2] || "REG";
+  const courierName = parts[3] || "JNE Express";
+  const courierService = parts[4] || "Reguler (2-3 Hari)";
 
   checkoutData[shopIdx].shipping_cost = cost;
-  checkoutData[shopIdx].courier_name = courier;
-  checkoutData[shopIdx].courier_service = service;
+  checkoutData[shopIdx].courier_code = courierCode;
+  checkoutData[shopIdx].service_code = serviceCode;
+  checkoutData[shopIdx].courier_name = courierName;
+  checkoutData[shopIdx].courier_service = courierService;
 
   if (checkoutData[shopIdx].applied_shipping_voucher) {
     checkoutData[shopIdx].applied_shipping_voucher.calculated_discount = calculateNominalDiscount(
@@ -522,8 +542,60 @@ function closeVoucherModal() {
 }
 
 // ==========================================
-// 3. ALAMAT & METODE PEMBAYARAN
+// 3. ALAMAT & METODE PEMBAYARAN & ONGKIR SERVER
 // ==========================================
+async function updateShippingRatesFromServer() {
+  if (!selectedAddress || !checkoutData || checkoutData.length === 0) return;
+
+  try {
+    const payload = {
+      address_id: selectedAddress.address_id,
+      destination_province: selectedAddress.province,
+      shops: checkoutData.map((shop) => ({
+        shop_id: shop.shop_id,
+        items: shop.items.map((it) => ({
+          product_id: it.product_id,
+          qty: it.qty
+        }))
+      }))
+    };
+
+    const res = await fetch("/on-shop/api/buyer/get_shipping_rates.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (result.status && result.data && result.data.shops_shipping) {
+      result.data.shops_shipping.forEach((shopShip) => {
+        const targetShop = checkoutData.find((s) => s.shop_id === shopShip.shop_id);
+        if (targetShop) {
+          targetShop.shipping_options = shopShip.options || [];
+          const currentKey = `${targetShop.courier_code || ''}|${targetShop.service_code || ''}`;
+          const matchedOpt = targetShop.shipping_options.find((o) => o.value_key === currentKey);
+          if (matchedOpt) {
+            targetShop.shipping_cost = matchedOpt.total_cost;
+            targetShop.courier_name = matchedOpt.courier_name;
+            targetShop.courier_service = matchedOpt.service_name;
+          } else if (targetShop.shipping_options.length > 0) {
+            const firstOpt = targetShop.shipping_options[0];
+            targetShop.courier_code = firstOpt.courier_code;
+            targetShop.service_code = firstOpt.service_code;
+            targetShop.shipping_cost = firstOpt.total_cost;
+            targetShop.courier_name = firstOpt.courier_name;
+            targetShop.courier_service = firstOpt.service_name;
+          }
+        }
+      });
+      renderCheckoutShops();
+      recalculateCheckout();
+    }
+  } catch (err) {
+    console.error("Gagal mengambil tarif kurir dari server:", err);
+  }
+}
+
 async function loadUserAddresses() {
   const addressBox = document.getElementById("currentAddressBox");
   try {
@@ -534,6 +606,7 @@ async function loadUserAddresses() {
       userAddresses = result.data;
       selectedAddress = userAddresses.find((a) => a.is_default == 1) || userAddresses[0];
       renderCurrentAddress();
+      await updateShippingRatesFromServer();
     } else {
       addressBox.innerHTML = `
         <p style="color: #e74c3c; font-size: 13px;">Anda belum memiliki alamat pengiriman tersimpan.</p>
@@ -593,6 +666,7 @@ function selectAddressFromModal(addrId) {
     selectedAddress = target;
     renderCurrentAddress();
     closeAddressModal();
+    updateShippingRatesFromServer();
   }
 }
 
@@ -641,8 +715,10 @@ async function processCreateOrder() {
   const payloadShops = checkoutData.map((shop) => ({
     shop_id: shop.shop_id,
     shipping_cost: shop.shipping_cost,
-    courier_name: shop.courier_name,
-    courier_service: shop.courier_service,
+    courier_code: shop.courier_code || "JNE",
+    service_code: shop.service_code || "REG",
+    courier_name: shop.courier_name || "JNE Express",
+    courier_service: shop.courier_service || "Reguler (2-3 Hari)",
     shop_voucher_id: shop.applied_shop_voucher ? shop.applied_shop_voucher.user_voucher_id : null,
     platform_prod_voucher_id: shop.applied_platform_prod_voucher ? shop.applied_platform_prod_voucher.user_voucher_id : null,
     shipping_voucher_id: shop.applied_shipping_voucher ? shop.applied_shipping_voucher.user_voucher_id : null,
