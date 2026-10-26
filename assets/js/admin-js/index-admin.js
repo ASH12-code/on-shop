@@ -154,6 +154,16 @@ async function fetchDashboardMetrics() {
     document.getElementById("totalMerchantNote").innerText = `Dari ${d.total_merchants} toko terdaftar`;
     document.getElementById("avgOrderValueText").innerText = `Rata-rata ${formatRupiah(d.avg_order_value)} / order`;
 
+    // Metrik Tambahan Minggu 4: Sales Units & Pembeli
+    const salesEl = document.getElementById("totalSalesUnitsText");
+    if (salesEl) salesEl.innerText = `${Number(d.total_sales_units || 0).toLocaleString("id-ID")} Unit`;
+
+    const buyersEl = document.getElementById("totalBuyersText");
+    if (buyersEl) buyersEl.innerText = `${Number(d.total_buyers || 0).toLocaleString("id-ID")} Pembeli`;
+
+    const newBuyersEl = document.getElementById("newBuyersNote");
+    if (newBuyersEl) newBuyersEl.innerText = `+${Number(d.new_buyers || 0)} pembeli baru`;
+
     // Pasang Titik Angka Skala Juta ke Grafik
     if (chartInstance && d.chart) {
       chartInstance.data.labels = d.chart.labels;
@@ -165,6 +175,10 @@ async function fetchDashboardMetrics() {
       chartInstance.data.datasets[1].data = cleanCommPoints;
       chartInstance.update();
     }
+
+    // Render Widget Top 5 Produk & Top 5 Seller
+    renderTopProducts(d.top_products || []);
+    renderTopSellers(d.top_sellers || []);
 
     // Simpan & Render Transaksi Terkini
     allRecentTransactions = d.recent_transactions || [];
@@ -224,6 +238,74 @@ function renderRecentTransactions() {
 }
 
 // =========================================================
+// 3b. WIDGET RANKING TOP 5 PRODUK & TOP 5 SELLER
+// =========================================================
+function renderTopProducts(products) {
+  const tbody = document.getElementById("topProductsTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!products || products.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:#64748b;">Belum ada data penjualan produk pada periode ini.</td></tr>`;
+    return;
+  }
+
+  products.forEach((p, idx) => {
+    const rankNum = idx + 1;
+    const rankClass = rankNum === 1 ? "rank-1" : rankNum === 2 ? "rank-2" : rankNum === 3 ? "rank-3" : "rank-other";
+    const imgUrl = p.product_image_url || "https://placehold.co/80x80?text=Produk";
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="text-align:center;"><span class="rank-badge ${rankClass}">${rankNum}</span></td>
+      <td>
+        <div class="prod-cell-flex">
+          <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(p.product_name)}" class="prod-thumb-mini" onerror="this.src='https://placehold.co/80x80?text=Produk'">
+          <span style="font-weight:600; font-size:13px; color:#1e293b; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(p.product_name)}">${escapeHtml(p.product_name)}</span>
+        </div>
+      </td>
+      <td style="text-align:center;"><span class="qty-pill">${Number(p.total_sold || 0).toLocaleString("id-ID")} unit</span></td>
+      <td style="text-align:right; font-weight:700; color:#0f172a; font-size:13px;">${formatRupiah(p.total_revenue)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderTopSellers(sellers) {
+  const tbody = document.getElementById("topSellersTableBody");
+  if (!tbody) return;
+  tbody.innerHTML = "";
+
+  if (!sellers || sellers.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:16px; color:#64748b;">Belum ada data merchant pada periode ini.</td></tr>`;
+    return;
+  }
+
+  sellers.forEach((s, idx) => {
+    const rankNum = idx + 1;
+    const rankClass = rankNum === 1 ? "rank-1" : rankNum === 2 ? "rank-2" : rankNum === 3 ? "rank-3" : "rank-other";
+    const initial = (s.shop_name || "Toko").charAt(0).toUpperCase();
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="text-align:center;"><span class="rank-badge ${rankClass}">${rankNum}</span></td>
+      <td>
+        <div class="shop-cell-flex">
+          <div class="shop-avatar-mini">${escapeHtml(initial)}</div>
+          <div style="line-height:1.2;">
+            <div style="font-weight:600; font-size:13px; color:#1e293b;">${escapeHtml(s.shop_name)}</div>
+            <small style="color:#64748b; font-size:11px;">📍 ${escapeHtml(s.shop_city || 'Pangkalpinang')}</small>
+          </div>
+        </div>
+      </td>
+      <td style="text-align:center;"><span style="font-weight:600; font-size:12.5px; color:#334155;">${Number(s.total_orders || 0).toLocaleString("id-ID")} pesanan</span></td>
+      <td style="text-align:right; font-weight:700; color:#2e8b57; font-size:13px;">${formatRupiah(s.total_revenue)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// =========================================================
 // 4. EKSPOR LAPORAN CSV & TOAST
 // =========================================================
 function handleExportReportCSV() {
@@ -234,6 +316,8 @@ function handleExportReportCSV() {
   const comm = document.getElementById("platformCommissionText").innerText.replace(/[^0-9]/g, "");
   const orders = document.getElementById("totalOrdersText").innerText.replace(/[^0-9]/g, "");
   const merchants = document.getElementById("activeMerchantText").innerText.replace(/[^0-9]/g, "");
+  const salesUnits = document.getElementById("totalSalesUnitsText") ? document.getElementById("totalSalesUnitsText").innerText.replace(/[^0-9]/g, "") : "0";
+  const buyers = document.getElementById("totalBuyersText") ? document.getElementById("totalBuyersText").innerText.replace(/[^0-9]/g, "") : "0";
 
   const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 
@@ -245,6 +329,8 @@ function handleExportReportCSV() {
   csvContent += `Gross Merchandise Value (GMV),Rp ${Number(gmv).toLocaleString("id-ID")}\n`;
   csvContent += `Komisi Bersih Platform (5%),Rp ${Number(comm).toLocaleString("id-ID")}\n`;
   csvContent += `Total Transaksi Selesai,${orders} Pesanan\n`;
+  csvContent += `Volume Produk Terjual,${salesUnits} Unit\n`;
+  csvContent += `Total Pembeli Terdaftar,${buyers} Akun\n`;
   csvContent += `Merchant Aktif Bertransaksi,${merchants} Toko\n`;
 
   const encodedUri = encodeURI(csvContent);

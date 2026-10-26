@@ -2,147 +2,60 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=pesanan-saya.html?tab=history">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat Pesanan</title>
-    <link rel="stylesheet" href="../../assets/css/buyer-css/riwayat-pesanan.css">
+    <title>Mengalihkan ke Pesanan Saya - ON Shop</title>
+    <script>
+        window.location.replace("pesanan-saya.html?tab=history");
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .redirect-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 420px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .redirect-box h2 {
+            font-size: 18px;
+            color: #2e8b57;
+            margin-bottom: 8px;
+        }
+        .redirect-box p {
+            font-size: 13.5px;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+        .redirect-link {
+            display: inline-block;
+            background-color: #2e8b57;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 9px 18px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
-
-    <!-- bagian untuk Home-page.html (Jika ingin memasang Navbar, letakkan di sini) -->
-
-    <div class="history-container">
-        <h2 class="page-title">Riwayat Pesanan</h2>
-
-        <!-- 1. Tab Filter Status Pesanan -->
-        <div class="status-tabs">
-            <button class="tab-btn active" data-status="semua">Semua</button>
-            <button class="tab-btn" data-status="belum-bayar">Belum Bayar</button>
-            <button class="tab-btn" data-status="dikemas">Dikemas</button>
-            <button class="tab-btn" data-status="dikirim">Dikirim</button>
-            <button class="tab-btn" data-status="selesai">Selesai</button>
-            <button class="tab-btn" data-status="dibatalkan">Dibatalkan</button>
-        </div>
-
-        <div class="order-list">
-            
-            <!-- KARTU 1: Status Belum Bayar -->
-            <div class="order-card" data-category="belum-bayar">
-                <!-- 2. Header Tiap Kartu -->
-                <div class="order-header">
-                    <div class="store-info">
-                        <!-- bagian untuk profil-toko.html -->
-                        <a href="#profil-toko.html" class="store-name">Toko Gadget Nusantara</a>
-                        <span class="date">11 Sep 2026</span>
-                        <span class="invoice">#INV/2026/09/11/001</span>
-                    </div>
-                    <span class="badge badge-yellow">Belum Bayar</span>
-                </div>
-
-                <!-- 3. Rincian Barang -->
-                <div class="order-body">
-                    <div class="product-item">
-                        <div class="product-thumb">Gambar</div>
-                        <div class="product-details">
-                            <!-- Tautan ke file yang sudah ada -->
-                            <a href="../HTML/detail-produk.html" class="product-name">Keyboard Mekanikal Fantech</a>
-                            <p class="variant">Warna: Hitam, Switch: Blue | x1</p>
-                        </div>
-                        <div class="product-price">Rp 450.000</div>
-                    </div>
-                </div>
-
-                <!-- 4. Ringkasan Keuangan -->
-                <div class="order-footer">
-                    <div class="finance-summary">
-                        <span class="payment-method">Metode: Transfer Bank</span>
-                        <span class="total-price">Total Belanja: <strong>Rp 475.000</strong></span>
-                    </div>
-                    <!-- 5. Tombol Aksi -->
-                    <div class="action-buttons">
-                        <!-- bagian untuk pembayaran.html -->
-                        <a href="#pembayaran.html" class="btn btn-outline">Batalkan Pesanan</a>
-                        <a href="#pembayaran.html" class="btn btn-primary">Bayar Sekarang</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KARTU 2: Status Dikirim (Dengan fitur +2 produk lainnya) -->
-            <div class="order-card" data-category="dikirim">
-                <div class="order-header">
-                    <div class="store-info">
-                        <a href="#profil-toko.html" class="store-name">Baber Daily Official</a>
-                        <span class="date">08 Sep 2026</span>
-                        <span class="invoice">#INV/2026/09/08/102</span>
-                    </div>
-                    <span class="badge badge-blue">Sedang Dikirim</span>
-                </div>
-
-                <div class="order-body">
-                    <div class="product-item">
-                        <div class="product-thumb">Gambar</div>
-                        <div class="product-details">
-                            <a href="../HTML/detail-produk.html" class="product-name">Baber Daily Facial Wash</a>
-                            <p class="variant">Ukuran: 100ml | x2</p>
-                            <p class="more-items-note">+2 produk lainnya</p>
-                        </div>
-                        <div class="product-price">Rp 75.000</div>
-                    </div>
-                </div>
-
-                <div class="order-footer">
-                    <div class="finance-summary">
-                        <span class="payment-method">Metode: E-Wallet</span>
-                        <span class="total-price">Total Belanja: <strong>Rp 250.000</strong></span>
-                    </div>
-                    <div class="action-buttons">
-                        <!-- bagian untuk lacak-paket.html dan invoice.html -->
-                        <a href="#invoice.html" class="link-small">Lihat Detail / Invoice</a>
-                        <button class="btn btn-outline">Lacak Paket</button>
-                        <button class="btn btn-primary">Pesanan Diterima</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KARTU 3: Status Selesai -->
-            <div class="order-card" data-category="selesai">
-                <div class="order-header">
-                    <div class="store-info">
-                        <a href="#profil-toko.html" class="store-name">Sneakers Hype</a>
-                        <span class="date">01 Sep 2026</span>
-                        <span class="invoice">#INV/2026/09/01/055</span>
-                    </div>
-                    <span class="badge badge-green">Selesai</span>
-                </div>
-
-                <div class="order-body">
-                    <div class="product-item">
-                        <div class="product-thumb">Gambar</div>
-                        <div class="product-details">
-                            <a href="../HTML/detail-produk.html" class="product-name">Sepatu Lari Ortuseight</a>
-                            <p class="variant">Warna: Putih, Ukuran: 42 | x1</p>
-                        </div>
-                        <div class="product-price">Rp 350.000</div>
-                    </div>
-                </div>
-
-                <div class="order-footer">
-                    <div class="finance-summary">
-                        <span class="payment-method">Metode: COD</span>
-                        <span class="total-price">Total Belanja: <strong>Rp 370.000</strong></span>
-                    </div>
-                    <div class="action-buttons">
-                        <!-- bagian untuk ulasan.html -->
-                        <a href="#invoice.html" class="link-small">Unduh Invoice</a>
-                        <a href="../HTML/keranjang.html" class="btn btn-outline">Beli Lagi</a>
-                        <a href="#ulasan.html" class="btn btn-primary">Beri Nilai</a>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+    <div class="redirect-box">
+        <h2>Mengalihkan ke Pesanan Saya...</h2>
+        <p>Halaman riwayat pesanan telah dipusatkan di Pesanan Saya untuk kemudahan pelacakan transaksi.</p>
+        <a href="pesanan-saya.html?tab=history" class="redirect-link">Buka Pesanan Saya Sekarang</a>
     </div>
-
-    <!-- Memanggil file JS -->
-    <script src="../../assets/js/buyer-js/riwayat-pesanan.js"></script>
 </body>
 </html>

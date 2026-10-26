@@ -24,6 +24,13 @@ function json_response(bool $status, string $message, $data = null, int $httpCod
     
     if ($data !== null) {
         $payload["data"] = $data;
+        if (is_array($data)) {
+            foreach ($data as $key => $val) {
+                if (!isset($payload[$key])) {
+                    $payload[$key] = $val;
+                }
+            }
+        }
     }
     
     echo json_encode($payload);
