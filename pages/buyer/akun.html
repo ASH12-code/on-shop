@@ -95,6 +95,51 @@
             </div>
         </div>
 
+        <!-- Ringkasan Statistik Belanja Pembeli (Minggu 4) -->
+        <div class="buyer-dashboard-kpi-grid">
+            <div class="buyer-kpi-card">
+                <div class="kpi-icon-wrap kpi-green">🛍️</div>
+                <div class="kpi-info-wrap">
+                    <span class="kpi-title">Total Belanja</span>
+                    <strong class="kpi-value" id="buyerTotalSpent">Rp 0</strong>
+                    <span class="kpi-subtext" id="buyerCompletedOrdersNote">0 pesanan selesai</span>
+                </div>
+            </div>
+
+            <div class="buyer-kpi-card">
+                <div class="kpi-icon-wrap kpi-amber">⏳</div>
+                <div class="kpi-info-wrap">
+                    <span class="kpi-title">Pesanan Berjalan</span>
+                    <strong class="kpi-value" id="buyerActiveOrders">0</strong>
+                    <span class="kpi-subtext">Menunggu proses / kirim</span>
+                </div>
+            </div>
+
+            <div class="buyer-kpi-card">
+                <div class="kpi-icon-wrap kpi-blue">📦</div>
+                <div class="kpi-info-wrap">
+                    <span class="kpi-title">Total Pesanan</span>
+                    <strong class="kpi-value" id="buyerTotalOrders">0</strong>
+                    <span class="kpi-subtext">Semua riwayat pembelian</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Pesanan Terbaru -->
+        <div class="buyer-recent-orders-card">
+            <div class="recent-orders-header">
+                <div class="recent-title-group">
+                    <h3>📦 Pesanan Terbaru</h3>
+                    <p class="recent-subtitle">Daftar transaksi belanja terkini yang Anda lakukan.</p>
+                </div>
+                <a href="pesanan-saya.html" class="link-view-all-orders">Lihat Semua Pesanan &rarr;</a>
+            </div>
+
+            <div class="recent-orders-list" id="recentBuyerOrdersList">
+                <div class="recent-loading-placeholder">Memuat pesanan terbaru...</div>
+            </div>
+        </div>
+
         <!-- Tab Navigasi -->
         <div class="account-tabs-nav">
             <button type="button" class="account-tab-btn active" onclick="switchAccountTab('biodataTab', this)">Biodata Diri</button>

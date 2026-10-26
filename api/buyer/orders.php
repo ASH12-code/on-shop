@@ -128,6 +128,110 @@ try {
         exit;
     }
 
+    // -------------------------------------------------------------
+    // 1b. RINGKASAN DASHBOARD PEMBELI (METRIK & PESANAN TERBARU)
+    // -------------------------------------------------------------
+    if ($action === 'dashboard_summary') {
+        $userId = $sessionUserId;
+
+        // Total seluruh pesanan
+        $stmtTotal = $db->prepare("
+            SELECT COUNT(so.sub_order_id)
+            FROM sub_orders so
+            JOIN master_orders mo ON so.master_order_id = mo.master_order_id
+            WHERE mo.buyer_id = :uid
+        ");
+        $stmtTotal->execute(['uid' => $userId]);
+        $totalOrders = (int)$stmtTotal->fetchColumn();
+
+        // Pesanan sedang berjalan (aktif)
+        $stmtActive = $db->prepare("
+            SELECT COUNT(so.sub_order_id)
+            FROM sub_orders so
+            JOIN master_orders mo ON so.master_order_id = mo.master_order_id
+            WHERE mo.buyer_id = :uid 
+              AND so.order_status IN ('MENUNGGU_BAYAR', 'MENUNGGU_VERIFIKASI', 'DIKEMAS', 'DIKIRIM')
+        ");
+        $stmtActive->execute(['uid' => $userId]);
+        $activeOrders = (int)$stmtActive->fetchColumn();
+
+        // Pesanan selesai
+        $stmtCompleted = $db->prepare("
+            SELECT COUNT(so.sub_order_id)
+            FROM sub_orders so
+            JOIN master_orders mo ON so.master_order_id = mo.master_order_id
+            WHERE mo.buyer_id = :uid AND so.order_status = 'SELESAI'
+        ");
+        $stmtCompleted->execute(['uid' => $userId]);
+        $completedOrders = (int)$stmtCompleted->fetchColumn();
+
+        // Total belanja selesai (Rp)
+        $stmtSpent = $db->prepare("
+            SELECT COALESCE(SUM(so.gross_product_amount + so.shipping_cost), 0)
+            FROM sub_orders so
+            JOIN master_orders mo ON so.master_order_id = mo.master_order_id
+            WHERE mo.buyer_id = :uid AND so.order_status = 'SELESAI'
+        ");
+        $stmtSpent->execute(['uid' => $userId]);
+        $totalSpent = (float)$stmtSpent->fetchColumn();
+
+        // 4 Pesanan terbaru
+        $stmtRecent = $db->prepare("
+            SELECT 
+                so.sub_order_id,
+                so.master_order_id,
+                so.sub_order_number,
+                so.order_status,
+                (so.gross_product_amount + so.shipping_cost) AS total_amount,
+                DATE_FORMAT(so.created_at, '%d %b %Y, %H:%i') AS created_at,
+                s.shop_name,
+                p.payment_method,
+                p.payment_status
+            FROM sub_orders so
+            JOIN master_orders mo ON so.master_order_id = mo.master_order_id
+            JOIN shops s ON so.shop_id = s.shop_id
+            LEFT JOIN payments p ON mo.master_order_id = p.master_order_id
+            WHERE mo.buyer_id = :uid
+            ORDER BY so.sub_order_id DESC
+            LIMIT 4
+        ");
+        $stmtRecent->execute(['uid' => $userId]);
+        $recentSubs = $stmtRecent->fetchAll(PDO::FETCH_ASSOC);
+
+        $recentOrders = [];
+        foreach ($recentSubs as $sub) {
+            $stmtItems = $db->prepare("
+                SELECT product_name, product_image_url, quantity, total_price
+                FROM order_items
+                WHERE sub_order_id = :soid
+                ORDER BY order_item_id ASC
+            ");
+            $stmtItems->execute(['soid' => $sub['sub_order_id']]);
+            $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
+
+            $itemCount = count($items);
+            $firstItem = $itemCount > 0 ? $items[0] : null;
+            $otherCount = $itemCount > 1 ? ($itemCount - 1) : 0;
+
+            $sub['first_item'] = $firstItem;
+            $sub['total_items_count'] = $itemCount;
+            $sub['other_items_count'] = $otherCount;
+            $recentOrders[] = $sub;
+        }
+
+        echo json_encode([
+            "status" => true,
+            "data" => [
+                "total_orders"     => $totalOrders,
+                "active_orders"    => $activeOrders,
+                "completed_orders" => $completedOrders,
+                "total_spent"      => $totalSpent,
+                "recent_orders"    => $recentOrders
+            ]
+        ]);
+        exit;
+    }
+
     $input = json_decode(file_get_contents("php://input"), true) ?: [];
 
     // -------------------------------------------------------------

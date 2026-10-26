@@ -87,7 +87,7 @@
       </div>
     </header>
 
-    <!-- KOTAK 2: 4 KARTU METRIK KPI -->
+    <!-- KOTAK 2: 6 KARTU METRIK KPI UTAMA & TAMBAHAN -->
     <section class="kpi-grid-container">
       <div class="admin-card kpi-card">
         <div class="kpi-text-area">
@@ -118,6 +118,24 @@
 
       <div class="admin-card kpi-card">
         <div class="kpi-text-area">
+          <span class="kpi-label">Total Sales (Unit Terjual)</span>
+          <h3 id="totalSalesUnitsText" style="color: #0284c7;">0 Unit</h3>
+          <small class="kpi-trend positive">Kuantitas Produk Laku</small>
+        </div>
+        <div class="kpi-icon-bubble" style="background:#e0f2fe; color:#0284c7;">🛍️</div>
+      </div>
+
+      <div class="admin-card kpi-card">
+        <div class="kpi-text-area">
+          <span class="kpi-label">Pertumbuhan Pembeli</span>
+          <h3 id="totalBuyersText">0 Pembeli</h3>
+          <small class="kpi-trend positive" id="newBuyersNote">+0 pembeli baru</small>
+        </div>
+        <div class="kpi-icon-bubble bubble-green">👥</div>
+      </div>
+
+      <div class="admin-card kpi-card">
+        <div class="kpi-text-area">
           <span class="kpi-label">Toko Aktif Bertransaksi</span>
           <h3 id="activeMerchantText">0 Merchant</h3>
           <small class="kpi-trend positive" id="totalMerchantNote">Dari 0 toko terdaftar</small>
@@ -140,6 +158,61 @@
       </div>
       <div class="canvas-chart-wrapper">
         <canvas id="adminMetricsChart"></canvas>
+      </div>
+    </section>
+
+    <!-- KOTAK 4: WIDGET RANKING TOP 5 PRODUK & TOP 5 SELLER -->
+    <section class="ranking-grid-container">
+      <!-- Widget Top 5 Produk Terlaris -->
+      <div class="admin-card ranking-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3>🔥 Top 5 Produk Terlaris</h3>
+            <p class="section-subtitle">Peringkat produk dengan kuantitas penjualan tertinggi.</p>
+          </div>
+          <span style="font-size: 11.5px; font-weight: bold; color: #2e8b57;">Unit Terjual</span>
+        </div>
+        <div class="table-responsive">
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align:center;">#</th>
+                <th>Nama Produk</th>
+                <th style="text-align: center;">Terjual</th>
+                <th style="text-align: right;">Total Nilai</th>
+              </tr>
+            </thead>
+            <tbody id="topProductsTableBody">
+              <tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:16px;">Memuat data produk...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Widget Top 5 Seller Berprestasi -->
+      <div class="admin-card ranking-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h3>🏆 Top 5 Seller Berprestasi</h3>
+            <p class="section-subtitle">Peringkat merchant dengan omzet transaksi terbesar.</p>
+          </div>
+          <span style="font-size: 11.5px; font-weight: bold; color: #2e8b57;">Omzet Toko</span>
+        </div>
+        <div class="table-responsive">
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align:center;">#</th>
+                <th>Toko & Lokasi</th>
+                <th style="text-align: center;">Order</th>
+                <th style="text-align: right;">Total GMV</th>
+              </tr>
+            </thead>
+            <tbody id="topSellersTableBody">
+              <tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:16px;">Memuat data merchant...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 

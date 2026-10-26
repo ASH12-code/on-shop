@@ -37,8 +37,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const isAuthenticated = await verifyServerSession();
   if (!isAuthenticated) return;
 
-  // 2. Muat data profil & buku alamat pengguna aktif
+  // 2. Muat data profil, ringkasan belanja, & buku alamat pengguna aktif
   await loadUserProfile();
+  await loadBuyerDashboardSummary();
   await loadUserAddresses();
 });
 
@@ -635,6 +636,117 @@ function executeLogout() {
   window.location.href = "login.html";
 }
 
+// ==========================================
+// BAGIAN 8: RINGKASAN DASHBOARD BELANJA PEMBELI (MINGGU 4)
+// ==========================================
+async function loadBuyerDashboardSummary() {
+  const kpiSpent = document.getElementById("buyerTotalSpent");
+  const kpiCompleted = document.getElementById("buyerCompletedOrdersNote");
+  const kpiActive = document.getElementById("buyerActiveOrders");
+  const kpiTotal = document.getElementById("buyerTotalOrders");
+  const recentContainer = document.getElementById("recentBuyerOrdersList");
+
+  if (!kpiSpent || !recentContainer) return;
+
+  try {
+    const res = await fetch("../../api/buyer/orders.php?action=dashboard_summary", {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+      credentials: "include"
+    });
+    const result = await res.json();
+
+    if (!result.status || !result.data) {
+      recentContainer.innerHTML = '<div class="recent-empty-state">Belum dapat memuat ringkasan transaksi.</div>';
+      return;
+    }
+
+    const d = result.data;
+    kpiSpent.innerText = formatRupiah(d.total_spent);
+    if (kpiCompleted) kpiCompleted.innerText = `${Number(d.completed_orders || 0)} pesanan selesai`;
+    if (kpiActive) kpiActive.innerText = Number(d.active_orders || 0);
+    if (kpiTotal) kpiTotal.innerText = Number(d.total_orders || 0);
+
+    renderRecentBuyerOrders(d.recent_orders || []);
+  } catch (err) {
+    console.error("Gagal memuat ringkasan dashboard pembeli:", err);
+    recentContainer.innerHTML = '<div class="recent-empty-state">Terjadi kendala saat memuat ringkasan pesanan.</div>';
+  }
+}
+
+function renderRecentBuyerOrders(orders) {
+  const container = document.getElementById("recentBuyerOrdersList");
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!orders || orders.length === 0) {
+    container.innerHTML = `
+      <div class="recent-empty-state">
+        <p style="margin-bottom:6px;">Belum ada riwayat pesanan.</p>
+        <a href="index.html">Mulai jelajahi produk menarik di ON Shop &rarr;</a>
+      </div>
+    `;
+    return;
+  }
+
+  const statusMap = {
+    'MENUNGGU_BAYAR': { text: 'Menunggu Pembayaran', class: 'recent-status-menunggu-bayar' },
+    'MENUNGGU_VERIFIKASI': { text: 'Verifikasi Pembayaran', class: 'recent-status-menunggu-verifikasi' },
+    'DIKEMAS': { text: 'Sedang Dikemas', class: 'recent-status-dikemas' },
+    'DIKIRIM': { text: 'Sedang Dikirim', class: 'recent-status-dikirim' },
+    'SELESAI': { text: 'Selesai', class: 'recent-status-selesai' },
+    'BATAL': { text: 'Dibatalkan', class: 'recent-status-batal' },
+    'DITOLAK': { text: 'Ditolak', class: 'recent-status-ditolak' }
+  };
+
+  orders.forEach(order => {
+    const item = document.createElement("div");
+    item.className = "recent-order-item";
+
+    const st = statusMap[order.order_status] || { text: order.order_status, class: 'recent-status-menunggu-bayar' };
+    
+    let prodName = `Pesanan #${escapeHtml(order.sub_order_number)}`;
+    let thumb = "https://placehold.co/80x80?text=Produk";
+
+    if (order.first_item && order.first_item.product_name) {
+      const extra = order.other_items_count > 0 ? ` <span style="color:#64748b; font-weight:normal;">(+${order.other_items_count} barang lainnya)</span>` : "";
+      prodName = `${escapeHtml(order.first_item.product_name)}${extra}`;
+      if (order.first_item.product_image_url) {
+        thumb = order.first_item.product_image_url;
+      }
+    }
+
+    item.innerHTML = `
+      <div class="recent-order-left">
+        <img src="${escapeHtml(thumb)}" alt="Produk" class="recent-order-thumb" onerror="this.src='https://placehold.co/80x80?text=Produk'">
+        <div class="recent-order-meta">
+          <div class="recent-order-number">${escapeHtml(order.sub_order_number)} &bull; ${escapeHtml(order.shop_name || 'Toko')}</div>
+          <div class="recent-order-product-name">${prodName}</div>
+          <div class="recent-order-shop-time">${escapeHtml(order.created_at)}</div>
+        </div>
+      </div>
+      <div class="recent-order-right">
+        <div class="recent-order-amount-wrap">
+          <span class="recent-order-amount">${formatRupiah(order.total_amount)}</span>
+          <span class="recent-status-badge ${st.class}">${st.text}</span>
+        </div>
+        <a href="pesanan-saya.html" class="btn-detail-recent">Lihat Detail</a>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function formatRupiah(num) {
+  return "Rp " + Number(num || 0).toLocaleString("id-ID");
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
 // Daftarkan semua fungsi ke window global agar dapat dipanggil onclick
 window.switchAccountTab = switchAccountTab;
 window.handleSaveProfile = handleSaveProfile;
@@ -653,3 +765,4 @@ window.executeDeleteAddress = executeDeleteAddress;
 window.confirmLogout = confirmLogout;
 window.closeLogoutModal = closeLogoutModal;
 window.executeLogout = executeLogout;
+window.loadBuyerDashboardSummary = loadBuyerDashboardSummary;

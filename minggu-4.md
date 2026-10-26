@@ -147,11 +147,11 @@ Dokumen perencanaan kerja teknis untuk pelaksanaan **Minggu 4** pada proyek pemb
 
 ## 🧪 Kriteria Selesai (Definition of Done)
 
-- [ ] Migrasi `005_dashboard_optimization_indices.sql` sukses terpasang di database `db_on_shop`.
-- [ ] Dashboard Admin menampilkan metrik sales unit, total pembeli, pembeli baru, Top 5 Produk Terlaris, dan Top 5 Merchant.
-- [ ] Filter periode pada Dashboard Admin menghitung seluruh metrik dan ranking secara akurat sesuai periode yang dipilih.
-- [ ] Halaman Akun Pembeli (`akun.html`) menampilkan ringkasan belanja (Total Pesanan, Pesanan Berjalan, Total Belanja) dan daftar pesanan terbaru.
-- [ ] Halaman `riwayat-pesanan.html` mengalihkan pengguna ke `pesanan-saya.html` secara mulus.
-- [ ] Seluruh skrip PHP bebas dari kesalahan sintaks (`php -l`).
-- [ ] Test suite Minggu 4 lulus 100% tanpa kegagalan (`PASS`).
+- [x] Migrasi `005_dashboard_optimization_indices.sql` sukses terpasang di database `db_on_shop`.
+- [x] Dashboard Admin menampilkan metrik sales unit, total pembeli, pembeli baru, Top 5 Produk Terlaris, dan Top 5 Merchant.
+- [x] Filter periode pada Dashboard Admin menghitung seluruh metrik dan ranking secara akurat sesuai periode yang dipilih.
+- [x] Halaman Akun Pembeli (`akun.html`) menampilkan ringkasan belanja (Total Pesanan, Pesanan Berjalan, Total Belanja) dan daftar pesanan terbaru.
+- [x] Halaman `riwayat-pesanan.html` mengalihkan pengguna ke `pesanan-saya.html` secara mulus.
+- [x] Seluruh skrip PHP bebas dari kesalahan sintaks (`php -l`).
+- [x] Test suite Minggu 4 lulus 100% tanpa kegagalan (`PASS`).
 - [ ] PR dibuat di Tahap 3, direview di Tahap 5, dan di-merge ke branch `master`.
