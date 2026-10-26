@@ -6,6 +6,135 @@
     <title>Pembayaran Virtual Account - ON Shop</title>
     <link rel="stylesheet" href="../../assets/css/buyer-css/navbar.css" />
     <link rel="stylesheet" href="../../assets/css/buyer-css/va.css">
+    <link rel="stylesheet" href="../../assets/css/buyer-css/toast.css" />
+    <style>
+        .va-copy-btn {
+            background: #2e8b57;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+            display: inline-block;
+        }
+        .va-copy-btn:hover {
+            background: #246e45;
+        }
+        .upload-section {
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px dashed #e2e8f0;
+            text-align: left;
+        }
+        .upload-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .upload-hint {
+            font-size: 11.5px;
+            color: #64748b;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .upload-dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .upload-dropzone:hover {
+            border-color: #2e8b57;
+            background: #f0fdf4;
+        }
+        .preview-box {
+            display: none;
+            margin-top: 12px;
+            text-align: center;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .preview-img {
+            max-width: 100%;
+            max-height: 180px;
+            border-radius: 6px;
+            object-fit: contain;
+        }
+        .btn-change-file {
+            font-size: 12px;
+            color: #ef4444;
+            background: none;
+            border: none;
+            cursor: pointer;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+        .btn-confirm-pay {
+            width: 100%;
+            height: 44px;
+            background: #2e8b57;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .btn-confirm-pay:hover {
+            background: #246e45;
+        }
+        .btn-confirm-pay:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-pay-later {
+            display: block;
+            width: 100%;
+            text-align: center;
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 12px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .btn-pay-later:hover {
+            color: #334155;
+        }
+        .instructions-box {
+            margin-top: 20px;
+            text-align: left;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 14px;
+        }
+        .instructions-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+        .instructions-list {
+            font-size: 11.5px;
+            color: #475569;
+            padding-left: 18px;
+            line-height: 1.5;
+        }
+    </style>
 </head>
 <body>
 
@@ -17,34 +146,73 @@
             <div class="va-display-box">
                 <span class="va-label">Nomor Virtual Account:</span>
                 <span class="va-number" id="vaNumberDisplay">8801 2948 1029 3840</span>
+                <div>
+                    <button type="button" class="va-copy-btn" onclick="copyVaNumber()">📋 Salin Nomor VA</button>
+                </div>
             </div>
 
             <div class="bill-amount-box">
-                <span class="bill-amount-label">Total Tagihan:</span>
+                <span class="bill-amount-label">Total Tagihan (Termasuk Ongkir):</span>
                 <span class="bill-amount-val" id="vaGrandTotal">Rp 0</span>
             </div>
 
-            <div class="detect-timer-notice" id="timerNotice">
-                <span>🔄</span>
-                <span>Mendeteksi transfer otomatis (<strong id="countdownText">5 detik</strong>)...</span>
+            <!-- Petunjuk Singkat Transfer -->
+            <div class="instructions-box">
+                <div class="instructions-title">Petunjuk Transfer Bank:</div>
+                <ol class="instructions-list">
+                    <li>Buka aplikasi Mobile Banking atau ATM bank Anda.</li>
+                    <li>Pilih menu <strong>Transfer &gt; Virtual Account / Tagihan</strong>.</li>
+                    <li>Masukkan nomor Virtual Account di atas beserta nominal tagihan yang sesuai.</li>
+                    <li>Simpan bukti transfer / struk pembayaran.</li>
+                </ol>
+            </div>
+
+            <!-- Formulir Unggah Bukti Transfer Virtual Account -->
+            <div class="upload-section">
+                <label class="upload-label">Unggah Bukti Struk / Mutasi Transfer:</label>
+                <p class="upload-hint">Format file didukung: JPG, PNG, WEBP (Maksimal 2 MB). Bukti transfer akan diverifikasi oleh penjual toko.</p>
+
+                <input type="file" id="vaProofFileInput" accept=".jpg,.jpeg,.png,.webp" style="display: none;" onchange="handleVaProofFileSelected(event)" />
+                
+                <div class="upload-dropzone" id="vaUploadDropzone" onclick="document.getElementById('vaProofFileInput').click()">
+                    <div style="font-size: 26px; margin-bottom: 4px;">🧾</div>
+                    <div style="font-size: 13px; font-weight: 600; color: #2e8b57;">Klik untuk Memilih Foto Bukti Transfer</div>
+                    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Foto struk ATM, bukti m-Banking, atau mutasi bank</div>
+                </div>
+
+                <div class="preview-box" id="vaProofPreviewBox">
+                    <img id="vaProofPreviewImg" class="preview-img" src="" alt="Pratinjau Bukti" />
+                    <div id="vaProofFileName" style="font-size: 12px; font-weight: 600; color: #334155; margin-top: 4px;"></div>
+                    <button type="button" class="btn-change-file" onclick="removeSelectedVaFile()">Ganti Foto</button>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <button type="button" class="btn-confirm-pay" id="btnSubmitVaProof" onclick="submitVaPaymentProof()" disabled>
+                        Kirim Bukti Pembayaran
+                    </button>
+                    <button type="button" class="btn-pay-later" onclick="redirectToOrders()">
+                        Bayar Nanti / Cek di Pesanan Saya
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Notifikasi Sukses -->
+    <!-- Modal Notifikasi Bukti Berhasil Terkirim -->
     <div id="paymentSuccessModal" class="modal-overlay hidden">
         <div class="modal-box">
             <div class="modal-icon">✅</div>
-            <h3 class="modal-title">Pembayaran Terverifikasi!</h3>
+            <h3 class="modal-title">Bukti Transfer Berhasil Terkirim!</h3>
             <p class="modal-desc">
-                Tagihan lunas. Pesanan Anda kini berstatus <strong>Sedang Dikemas</strong> dan diteruskan ke toko.
+                Bukti pembayaran Anda telah tersimpan dan pesanan kini berstatus <strong>Menunggu Verifikasi Penjual</strong>. Penjual akan memeriksa mutasi dana sebelum memproses kemasan paket Anda.
             </p>
             <button type="button" class="btn-modal-action" onclick="redirectToOrders()">
-                Lihat Pesanan Saya
+                Buka Pesanan Saya
             </button>
         </div>
     </div>
 
+    <script src="../../assets/js/buyer-js/toast.js"></script>
     <script src="../../assets/js/buyer-js/va.js"></script>
 </body>
 </html>

@@ -9,6 +9,8 @@ var searchKeyword = "";
 var selectedCourier = "";
 var activeBookingOrder = null;
 var pendingCancelOrderId = null;
+var activeProofSubOrderId = null;
+var activeRejectSubOrderId = null;
 var toastTimeout = null;
 
 const API_ORDERS_URL = "../../api/seller/manage_orders.php";
@@ -86,19 +88,22 @@ function handleTabClick(statusKey, btnElement) {
 }
 
 function updateTabCounters() {
-  const total   = allOrders.length;
-  const dikemas = allOrders.filter(o => o.order_status === "DIKEMAS").length;
-  const dikirim = allOrders.filter(o => o.order_status === "DIKIRIM").length;
-  const selesai = allOrders.filter(o => o.order_status === "SELESAI").length;
-  const batal   = allOrders.filter(o => o.order_status === "BATAL").length;
+  const total      = allOrders.length;
+  const verifikasi = allOrders.filter(o => o.order_status === "MENUNGGU_VERIFIKASI").length;
+  const dikemas    = allOrders.filter(o => o.order_status === "DIKEMAS").length;
+  const dikirim    = allOrders.filter(o => o.order_status === "DIKIRIM").length;
+  const selesai    = allOrders.filter(o => o.order_status === "SELESAI").length;
+  const batal      = allOrders.filter(o => o.order_status === "BATAL").length;
 
   const elAll = document.getElementById("countAll");
+  const elVerifikasi = document.getElementById("countVerifikasi");
   const elDikemas = document.getElementById("countDikemas");
   const elDikirim = document.getElementById("countDikirim");
   const elSelesai = document.getElementById("countSelesai");
   const elBatal = document.getElementById("countBatal");
 
   if (elAll) elAll.innerText = total;
+  if (elVerifikasi) elVerifikasi.innerText = verifikasi;
   if (elDikemas) elDikemas.innerText = dikemas;
   if (elDikirim) elDikirim.innerText = dikirim;
   if (elSelesai) elSelesai.innerText = selesai;
@@ -170,7 +175,22 @@ function renderOrderFeed() {
 
     const st = (order.order_status || "").toUpperCase();
 
-    if (st === "DIKEMAS") {
+    if (st === "MENUNGGU_VERIFIKASI") {
+      statusBadgeText = "Menunggu Verifikasi";
+      statusBadgeClass = "status-verifikasi";
+      actionButtons = `
+        <button type="button" class="btn-act btn-act-blue" onclick="openProofModal(${order.sub_order_id})">👁️ Bukti Bayar</button>
+        <button type="button" class="btn-act btn-act-green" onclick="approvePaymentDirect(${order.sub_order_id})">✅ Setujui</button>
+        <button type="button" class="btn-act btn-act-red" onclick="openRejectModal(${order.sub_order_id})">❌ Tolak</button>
+        <button type="button" class="btn-act btn-act-blue" onclick="openOrderDetailModal(${order.sub_order_id})">Rincian</button>
+      `;
+    } else if (st === "MENUNGGU_BAYAR") {
+      statusBadgeText = "Menunggu Bayar";
+      statusBadgeClass = "status-menunggu-bayar";
+      actionButtons = `
+        <button type="button" class="btn-act btn-act-blue" onclick="openOrderDetailModal(${order.sub_order_id})">Rincian</button>
+      `;
+    } else if (st === "DIKEMAS") {
       statusBadgeText = "Perlu Diproses";
       statusBadgeClass = "status-dikemas";
       actionButtons = `
@@ -495,3 +515,153 @@ function handleCourierFilter() {
   selectedCourier = document.getElementById("courierFilter").value;
   renderOrderFeed();
 }
+
+// =========================================================
+// 8. VERIFIKASI BUKTI TRANSFER PEMBAYARAN (SELLER WORKFLOW)
+// =========================================================
+function openProofModal(subOrderId) {
+  const target = allOrders.find(o => o.sub_order_id === subOrderId);
+  if (!target) return;
+
+  activeProofSubOrderId = subOrderId;
+  const invEl = document.getElementById("proofOrderInvText");
+  const imgEl = document.getElementById("proofModalImg");
+
+  if (invEl) {
+    invEl.innerText = `#${target.sub_order_number} • Pembeli: ${target.buyer_name} • Total: Rp ${Number(target.gross_product_amount || 0).toLocaleString('id-ID')}`;
+  }
+
+  if (imgEl) {
+    imgEl.src = target.proof_view_url || (`../../api/files/payment_proof.php?sub_order_id=${subOrderId}`);
+  }
+
+  const modal = document.getElementById("proofModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeProofModal() {
+  const modal = document.getElementById("proofModal");
+  if (modal) modal.style.display = "none";
+  activeProofSubOrderId = null;
+}
+
+function openRejectModal(subOrderId) {
+  const target = allOrders.find(o => o.sub_order_id === subOrderId);
+  if (!target) return;
+
+  activeRejectSubOrderId = subOrderId;
+  const invEl = document.getElementById("rejectOrderInvText");
+  if (invEl) {
+    invEl.innerText = `#${target.sub_order_number} • Pembeli: ${target.buyer_name}`;
+  }
+
+  const preset = document.getElementById("rejectPresetSelect");
+  if (preset) preset.value = "";
+  const textarea = document.getElementById("rejectReasonTextarea");
+  if (textarea) textarea.value = "";
+
+  const modal = document.getElementById("rejectModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeRejectModal() {
+  const modal = document.getElementById("rejectModal");
+  if (modal) modal.style.display = "none";
+  activeRejectSubOrderId = null;
+}
+
+function handleRejectPresetChange() {
+  const preset = document.getElementById("rejectPresetSelect");
+  const textarea = document.getElementById("rejectReasonTextarea");
+  if (preset && textarea && preset.value) {
+    textarea.value = preset.value;
+  }
+}
+
+function openRejectModalFromProof() {
+  const subId = activeProofSubOrderId;
+  closeProofModal();
+  if (subId) {
+    openRejectModal(subId);
+  }
+}
+
+async function approvePaymentFromProof() {
+  const subId = activeProofSubOrderId;
+  closeProofModal();
+  if (subId) {
+    await approvePaymentDirect(subId);
+  }
+}
+
+async function approvePaymentDirect(subOrderId) {
+  const storedUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+  const authQuery = storedUser.user_id ? `&auth_user_id=${storedUser.user_id}` : "";
+
+  try {
+    const res = await fetch(`${API_ORDERS_URL}?action=approve_payment${authQuery}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sub_order_id: subOrderId })
+    });
+    const result = await res.json();
+
+    if (result.status) {
+      showToast(result.message || "Pembayaran berhasil disetujui!", "success");
+      await fetchOrders();
+    } else {
+      showToast(result.message || "Gagal menyetujui pembayaran.", "error");
+    }
+  } catch (err) {
+    console.error("Gagal menyetujui pembayaran:", err);
+    showToast("Terjadi gangguan koneksi sistem", "error");
+  }
+}
+
+async function submitRejectPayment() {
+  if (!activeRejectSubOrderId) return;
+
+  const textarea = document.getElementById("rejectReasonTextarea");
+  const reason = textarea ? textarea.value.trim() : "";
+
+  if (!reason) {
+    showToast("Harap isi alasan penolakan bukti pembayaran", "error");
+    return;
+  }
+
+  const storedUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+  const authQuery = storedUser.user_id ? `&auth_user_id=${storedUser.user_id}` : "";
+
+  try {
+    const res = await fetch(`${API_ORDERS_URL}?action=reject_payment${authQuery}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sub_order_id: activeRejectSubOrderId,
+        rejection_reason: reason
+      })
+    });
+    const result = await res.json();
+
+    if (result.status) {
+      closeRejectModal();
+      showToast(result.message || "Bukti pembayaran berhasil ditolak", "success");
+      await fetchOrders();
+    } else {
+      showToast(result.message || "Gagal menolak bukti pembayaran.", "error");
+    }
+  } catch (err) {
+    console.error("Gagal menolak bukti pembayaran:", err);
+    showToast("Terjadi gangguan koneksi sistem", "error");
+  }
+}
+
+window.openProofModal = openProofModal;
+window.closeProofModal = closeProofModal;
+window.openRejectModal = openRejectModal;
+window.closeRejectModal = closeRejectModal;
+window.handleRejectPresetChange = handleRejectPresetChange;
+window.openRejectModalFromProof = openRejectModalFromProof;
+window.approvePaymentFromProof = approvePaymentFromProof;
+window.approvePaymentDirect = approvePaymentDirect;
+window.submitRejectPayment = submitRejectPayment;

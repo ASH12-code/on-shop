@@ -305,10 +305,13 @@ html, body {
   color: #ffffff;
 }
 
+.status-verifikasi { background: #8b5cf6; }
+.status-menunggu-bayar { background: #64748b; }
 .status-dikemas { background: #ff9800; }
 .status-dikirim { background: #03a9f4; }
 .status-selesai { background: #2e8b57; }
 .status-batal   { background: #ef4444; }
+.badge-warning  { background: #8b5cf6; color: #ffffff; }
 
 /* DAFTAR ITEM PRODUK (RESPONSIF KARTU TANPA OVERFLOW) */
 .order-items-list {
