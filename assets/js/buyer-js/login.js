@@ -86,13 +86,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const result = await response.json();
+      const userData = result.user || (result.data && result.data.user) || (result.data && result.data.user_id ? result.data : null);
 
-      if (result.status && result.user) {
+      if (result.status && userData) {
         // Simpan sesi user ke localStorage
-        localStorage.setItem("currentUser", JSON.stringify(result.user));
+        localStorage.setItem("currentUser", JSON.stringify(userData));
 
-        const role = String(result.user.role || "").toLowerCase().trim();
-        const namaUser = result.user.name || "Pengguna";
+        const role = String(userData.role || "").toLowerCase().trim();
+        const namaUser = userData.name || "Pengguna";
 
         // Tampilkan Toast Sukses
         if (typeof showToast === "function") {
@@ -103,7 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const urlParams = new URLSearchParams(window.location.search);
         const redirectParam = urlParams.get("redirect");
         const redirectSession = sessionStorage.getItem("redirectAfterLogin");
-        const targetRedirect = redirectParam || redirectSession;
+        const serverRedirect = result.redirect || (result.data && result.data.redirect);
+        const targetRedirect = redirectParam || redirectSession || serverRedirect;
 
         sessionStorage.removeItem("redirectAfterLogin");
 

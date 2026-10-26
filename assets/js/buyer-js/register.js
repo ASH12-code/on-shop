@@ -99,12 +99,13 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await res.json();
+      const userData = data.user || (data.data && data.data.user) || data.data;
 
-      if (data.status) {
-        localStorage.setItem("currentUser", JSON.stringify(data.user));
+      if (data.status && userData) {
+        localStorage.setItem("currentUser", JSON.stringify(userData));
 
         if (typeof showToast === "function") {
-          showToast(`Selamat datang di ON Shop, ${data.user.name}!`, "success", 2500);
+          showToast(`Selamat datang di ON Shop, ${userData.name || 'Pengguna'}!`, "success", 2500);
         }
 
         setTimeout(() => {
