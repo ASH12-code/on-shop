@@ -186,7 +186,7 @@ async function loadOrdersFromDatabase() {
 }
 
 function updateBadgeCounters() {
-  const unpaidOrders = allOrders.filter((o) => o.order_status === "MENUNGGU_BAYAR");
+  const unpaidOrders = allOrders.filter((o) => o.order_status === "MENUNGGU_BAYAR" || o.order_status === "MENUNGGU_VERIFIKASI");
   const packedOrders = allOrders.filter((o) => o.order_status === "DIKEMAS");
   const shippedOrders = allOrders.filter((o) => o.order_status === "DIKIRIM" && !o.delivered_at);
   const arrivedOrders = allOrders.filter((o) => o.order_status === "DIKIRIM" && Boolean(o.delivered_at));
@@ -357,7 +357,7 @@ function renderActiveFeed() {
   let filtered = [];
 
   if (currentActiveFilter === "unpaid") {
-    filtered = allOrders.filter((o) => o.order_status === "MENUNGGU_BAYAR");
+    filtered = allOrders.filter((o) => o.order_status === "MENUNGGU_BAYAR" || o.order_status === "MENUNGGU_VERIFIKASI");
   } else if (currentActiveFilter === "packed") {
     filtered = allOrders.filter((o) => o.order_status === "DIKEMAS");
   } else if (currentActiveFilter === "shipped") {
@@ -414,14 +414,19 @@ function createOrderCardElement(order, isHistory) {
   const totalOrderPrice = parseFloat(order.gross_product_amount || 0) + parseFloat(order.shipping_cost || 0);
 
   let statusBadgeText = order.order_status;
-  if (order.order_status === "MENUNGGU_BAYAR") statusBadgeText = "Menunggu Pembayaran";
-  if (order.order_status === "DIKEMAS") statusBadgeText = "Sedang Dikemas (Saldo Tertahan)";
-  if (order.order_status === "DIKIRIM") {
+  if (order.order_status === "MENUNGGU_VERIFIKASI") {
+    statusBadgeText = "Menunggu Verifikasi Penjual";
+  } else if (order.order_status === "MENUNGGU_BAYAR") {
+    statusBadgeText = (order.payment_status === "REJECTED") ? "Bukti Ditolak Penjual" : "Menunggu Pembayaran";
+  } else if (order.order_status === "DIKEMAS") {
+    statusBadgeText = "Sedang Dikemas (Saldo Tertahan)";
+  } else if (order.order_status === "DIKIRIM") {
     statusBadgeText = order.delivered_at ? "Paket Telah Tiba di Lokasi" : "Dalam Pengiriman Kurir";
-  }
-  if (order.order_status === "SELESAI") statusBadgeText = "Selesai (Saldo Siap Tarik)";
-  if (order.order_status === "DIKOMPLAIN") statusBadgeText = "Dalam Pengajuan Retur";
-  if (order.order_status === "BATAL") {
+  } else if (order.order_status === "SELESAI") {
+    statusBadgeText = "Selesai (Saldo Siap Tarik)";
+  } else if (order.order_status === "DIKOMPLAIN") {
+    statusBadgeText = "Dalam Pengajuan Retur";
+  } else if (order.order_status === "BATAL") {
     statusBadgeText = order.dispute && order.dispute.dispute_status === "REFUNDED" ? "Dana Dikembalikan" : "Dibatalkan";
   }
 
@@ -451,9 +456,32 @@ function createOrderCardElement(order, isHistory) {
   }
 
   let disputeAlertHtml = "";
+  let rejectionAlertHtml = "";
   let actionButtonsHtml = "";
 
-  if (order.order_status === "MENUNGGU_BAYAR") {
+  if (order.payment_status === "REJECTED" && order.rejection_reason) {
+    rejectionAlertHtml = `
+      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 14px; margin: 10px 16px; font-size: 12px; color: #991b1b; line-height: 1.5;">
+        <strong style="display:block; margin-bottom: 2px;">⚠️ Catatan Penolakan dari Penjual:</strong>
+        <span>${escapeHtml(order.rejection_reason)}</span>
+      </div>
+    `;
+  }
+
+  if (order.order_status === "MENUNGGU_VERIFIKASI") {
+    let paymentDetail = "";
+    if (order.payment_method === "QRIS") {
+      paymentDetail = `<span style="font-size: 11.5px; color: #2e8b57; font-weight: bold; margin-right: 6px;">QRIS</span>`;
+    } else if (order.va_number) {
+      paymentDetail = `<span style="font-size: 11.5px; color: #2e8b57; font-weight: bold; margin-right: 6px;">VA: ${order.va_number}</span>`;
+    }
+
+    actionButtonsHtml = `
+      ${paymentDetail}
+      <span style="font-size: 11.5px; color: #8b5cf6; font-weight: 600; margin-right: 8px;">⏳ Bukti sedang diperiksa penjual</span>
+      <button type="button" class="btn-action-outline" onclick="openReuploadModal(${order.sub_order_id})">Unggah Ulang Bukti</button>
+    `;
+  } else if (order.order_status === "MENUNGGU_BAYAR") {
     let paymentDetail = "";
     if (order.payment_method === "QRIS") {
       paymentDetail = `<span style="font-size: 12px; color: #2e8b57; font-weight: bold; margin-right: 8px;">Scan QRIS (${order.va_number || "-"})</span>`;
@@ -461,11 +489,19 @@ function createOrderCardElement(order, isHistory) {
       paymentDetail = `<span style="font-size: 12px; color: #2e8b57; font-weight: bold; margin-right: 8px;">No. VA: ${order.va_number}</span>`;
     }
 
-    actionButtonsHtml = `
-      ${paymentDetail}
-      <button type="button" class="btn-action-cancel" onclick="cancelBuyerOrder(${order.sub_order_id})">Batalkan</button>
-      <button type="button" class="btn-action-primary" onclick="simulatePayOrder(${order.master_order_id})">Bayar Sekarang</button>
-    `;
+    if (order.payment_status === "REJECTED") {
+      actionButtonsHtml = `
+        ${paymentDetail}
+        <button type="button" class="btn-action-cancel" onclick="cancelBuyerOrder(${order.sub_order_id})">Batalkan</button>
+        <button type="button" class="btn-action-primary" style="background: #ea580c;" onclick="openReuploadModal(${order.sub_order_id})">Unggah Ulang Bukti</button>
+      `;
+    } else {
+      actionButtonsHtml = `
+        ${paymentDetail}
+        <button type="button" class="btn-action-cancel" onclick="cancelBuyerOrder(${order.sub_order_id})">Batalkan</button>
+        <button type="button" class="btn-action-primary" onclick="goToPaymentPage(${order.sub_order_id})">Bayar / Unggah Bukti</button>
+      `;
+    }
   } else if (order.order_status === "DIKEMAS") {
     actionButtonsHtml = `
       <span style="font-size: 11.5px; color: #64748b; margin-right: 8px;">Saldo tersimpan di Saldo Tertahan Toko</span>
@@ -554,6 +590,7 @@ function createOrderCardElement(order, isHistory) {
       <span class="order-status-tag">${statusBadgeText}</span>
     </div>
     <div class="order-items-wrapper">${itemsHtml}</div>
+    ${rejectionAlertHtml}
     ${disputeAlertHtml}
     <div class="order-card-footer">
       <div class="order-total-sum">
@@ -565,6 +602,175 @@ function createOrderCardElement(order, isHistory) {
 
   return card;
 }
+
+// -------------------------------------------------------------
+// AKSI UNGGAH ULANG BUKTI PEMBAYARAN & SINKRONISASI
+// -------------------------------------------------------------
+let selectedReuploadFile = null;
+let activeReuploadSubOrder = null;
+
+function goToPaymentPage(subOrderId) {
+  const order = allOrders.find((o) => o.sub_order_id === subOrderId);
+  if (!order) return;
+
+  sessionStorage.setItem("activeOrderSession", JSON.stringify(order));
+  const method = (order.payment_method || "").toUpperCase();
+  if (method === "QRIS") {
+    window.location.href = "pembayaran-qris.html";
+  } else if (method.startsWith("VA_")) {
+    const bank = method.replace("VA_", "");
+    window.location.href = `pembayaran-va.html?bank=${bank}`;
+  } else {
+    openReuploadModal(subOrderId);
+  }
+}
+
+function openReuploadModal(subOrderId) {
+  const order = allOrders.find((o) => o.sub_order_id === subOrderId);
+  if (!order) return;
+
+  activeReuploadSubOrder = order;
+  selectedReuploadFile = null;
+
+  const invText = document.getElementById("reuploadOrderInvText");
+  if (invText) {
+    invText.innerText = `#${order.sub_order_number} • Total: Rp ${parseFloat(order.grand_total || order.gross_product_amount || 0).toLocaleString("id-ID")}`;
+  }
+
+  const banner = document.getElementById("rejectionReasonBanner");
+  const reasonText = document.getElementById("rejectionReasonText");
+  if (order.rejection_reason && order.payment_status === "REJECTED") {
+    if (banner) banner.style.display = "block";
+    if (reasonText) reasonText.innerText = order.rejection_reason;
+  } else {
+    if (banner) banner.style.display = "none";
+  }
+
+  removeReuploadFile();
+
+  const modal = document.getElementById("reuploadProofModal");
+  if (modal) modal.classList.remove("hidden");
+}
+
+function closeReuploadModal() {
+  const modal = document.getElementById("reuploadProofModal");
+  if (modal) modal.classList.add("hidden");
+  activeReuploadSubOrder = null;
+  selectedReuploadFile = null;
+}
+
+function handleReuploadFileSelect(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const maxBytes = 2 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    if (typeof showToast === "function") showToast("Ukuran file maksimal 2 MB", "error");
+    else alert("Ukuran file maksimal 2 MB");
+    event.target.value = "";
+    return;
+  }
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+  if (!allowedTypes.includes(file.type)) {
+    if (typeof showToast === "function") showToast("Format file harus berupa gambar (JPG, PNG, WEBP)", "error");
+    else alert("Format file harus berupa gambar (JPG, PNG, WEBP)");
+    event.target.value = "";
+    return;
+  }
+
+  selectedReuploadFile = file;
+
+  const previewBox = document.getElementById("reuploadPreviewBox");
+  const previewImg = document.getElementById("reuploadPreviewImg");
+  const fileNameText = document.getElementById("reuploadFileNameText");
+  const dropzone = document.getElementById("reuploadDropzone");
+  const btnSubmit = document.getElementById("btnSubmitReupload");
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (previewImg) previewImg.src = e.target.result;
+    if (fileNameText) fileNameText.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    if (previewBox) previewBox.style.display = "block";
+    if (dropzone) dropzone.style.display = "none";
+    if (btnSubmit) btnSubmit.disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeReuploadFile() {
+  selectedReuploadFile = null;
+  const fileInput = document.getElementById("reuploadFileInput");
+  if (fileInput) fileInput.value = "";
+
+  const previewBox = document.getElementById("reuploadPreviewBox");
+  const dropzone = document.getElementById("reuploadDropzone");
+  const btnSubmit = document.getElementById("btnSubmitReupload");
+
+  if (previewBox) previewBox.style.display = "none";
+  if (dropzone) dropzone.style.display = "block";
+  if (btnSubmit) btnSubmit.disabled = true;
+}
+
+async function submitReuploadProof() {
+  if (!activeReuploadSubOrder || !selectedReuploadFile) {
+    if (typeof showToast === "function") showToast("Silakan pilih file bukti transfer terlebih dahulu", "warning");
+    return;
+  }
+
+  const btnSubmit = document.getElementById("btnSubmitReupload");
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerText = "Mengirim...";
+  }
+
+  const formData = new FormData();
+  formData.append("master_order_id", activeReuploadSubOrder.master_order_id || 0);
+  formData.append("sub_order_id", activeReuploadSubOrder.sub_order_id || 0);
+  formData.append("proof_image", selectedReuploadFile);
+
+  try {
+    const res = await fetch("/on-shop/api/buyer/upload_payment_proof.php", {
+      method: "POST",
+      body: formData
+    });
+    const result = await res.json();
+
+    if (result.status) {
+      closeReuploadModal();
+      if (typeof showToast === "function") {
+        showToast("Bukti pembayaran berhasil dikirim! Menunggu verifikasi penjual.", "success");
+      }
+      await loadOrdersFromDatabase();
+    } else {
+      if (typeof showToast === "function") {
+        showToast(result.message || "Gagal mengirim bukti pembayaran.", "error");
+      } else {
+        alert(result.message || "Gagal mengirim bukti pembayaran.");
+      }
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerText = "Kirim Bukti";
+      }
+    }
+  } catch (err) {
+    console.error("Gagal mengirim bukti pembayaran:", err);
+    if (typeof showToast === "function") {
+      showToast("Terjadi gangguan koneksi", "error");
+    }
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerText = "Kirim Bukti";
+    }
+  }
+}
+
+window.goToPaymentPage = goToPaymentPage;
+window.openReuploadModal = openReuploadModal;
+window.closeReuploadModal = closeReuploadModal;
+window.handleReuploadFileSelect = handleReuploadFileSelect;
+window.removeReuploadFile = removeReuploadFile;
+window.submitReuploadProof = submitReuploadProof;
 
 // -------------------------------------------------------------
 // AKSI TRANSAKSI DEMO & INTEGRASI SALDO

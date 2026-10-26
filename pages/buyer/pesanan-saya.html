@@ -284,6 +284,42 @@
         </div>
     </div>
 
+    <!-- MODAL UNGGAH ULANG / UNGGAH BUKTI PEMBAYARAN TRANSFER -->
+    <div id="reuploadProofModal" class="modal-overlay hidden">
+        <div class="modal-box" style="max-width: 440px; text-align: left; max-height: 90vh; overflow-y: auto;">
+            <h3 class="modal-title" style="text-align: center; color: #2e8b57;">Unggah Bukti Pembayaran</h3>
+            <p class="modal-subtitle" id="reuploadOrderInvText" style="text-align: center; color: #64748b; font-size: 13px; margin-bottom: 12px;">#ORD-000000</p>
+
+            <!-- Banner Alasan Penolakan (Jika ada) -->
+            <div id="rejectionReasonBanner" style="display: none; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px;">
+                <div style="font-size: 12px; font-weight: bold; color: #b91c1c; margin-bottom: 2px;">⚠️ Bukti Pembayaran Sebelumnya Ditolak Penjual:</div>
+                <div id="rejectionReasonText" style="font-size: 11.5px; color: #991b1b; line-height: 1.4;"></div>
+            </div>
+
+            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 6px;">Pilih Foto Bukti Transfer:</label>
+            <p style="font-size: 11px; color: #64748b; margin-bottom: 10px; line-height: 1.4;">Mendukung format JPG, PNG, WEBP (Maksimal 2 MB). Pastikan nominal dan nomor rekening tujuan terlihat jelas.</p>
+
+            <input type="file" id="reuploadFileInput" accept=".jpg,.jpeg,.png,.webp" style="display: none;" onchange="handleReuploadFileSelect(event)" />
+
+            <div id="reuploadDropzone" onclick="document.getElementById('reuploadFileInput').click()" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 18px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s ease;">
+                <div style="font-size: 26px; margin-bottom: 4px;">📤</div>
+                <div style="font-size: 13px; font-weight: 600; color: #2e8b57;">Pilih File Foto Bukti</div>
+                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Klik di sini untuk menjelajahi galeri / berkas</div>
+            </div>
+
+            <div id="reuploadPreviewBox" style="display: none; margin-top: 10px; text-align: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                <img id="reuploadPreviewImg" src="" alt="Pratinjau" style="max-width: 100%; max-height: 180px; border-radius: 6px; object-fit: contain;" />
+                <div id="reuploadFileNameText" style="font-size: 11.5px; font-weight: 600; color: #334155; margin-top: 4px;"></div>
+                <button type="button" onclick="removeReuploadFile()" style="font-size: 11.5px; color: #ef4444; background: none; border: none; cursor: pointer; margin-top: 6px; font-weight: 600;">Ganti Foto</button>
+            </div>
+
+            <div class="modal-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;">
+                <button type="button" class="btn-cancel" onclick="closeReuploadModal()" style="padding: 8px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer;">Batal</button>
+                <button type="button" id="btnSubmitReupload" class="btn-submit-review" onclick="submitReuploadProof()" disabled style="padding: 8px 18px; border-radius: 6px; border: none; background: #2e8b57; color: #fff; font-weight: bold; cursor: pointer;">Kirim Bukti</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 3. Bottom Navigation Mobile Standar Baru -->
     <nav class="mobile-bottom-nav">
         <a href="index.html" class="bottom-nav-item">

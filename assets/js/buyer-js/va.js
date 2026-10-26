@@ -1,12 +1,10 @@
 /**
- * Logika Simulasi Pembayaran Virtual Account (VA) & Sinkronisasi Pesanan
+ * Logika Pembayaran Virtual Account (VA) & Unggah Bukti Transfer
  * File: assets/js/buyer-js/va.js
  */
 
 let activeOrder = null;
-let currentUser = JSON.parse(localStorage.getItem("currentUser")) || null;
-let countdownTimer = null;
-let secondsRemaining = 5;
+let selectedVaProofFile = null;
 
 document.addEventListener("DOMContentLoaded", () => {
   const sessionData = sessionStorage.getItem("activeOrderSession");
@@ -21,7 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  activeOrder = JSON.parse(sessionData);
+  try {
+    activeOrder = JSON.parse(sessionData);
+  } catch (e) {
+    console.error("Gagal parse activeOrderSession:", e);
+    window.location.href = "pesanan-saya.html?tab=belum_bayar";
+    return;
+  }
 
   const urlParams = new URLSearchParams(window.location.search);
   const bank = (urlParams.get("bank") || "BCA").toUpperCase();
@@ -40,8 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (totalDisplay) {
     totalDisplay.innerText = `Rp ${Number(activeOrder.grand_total || 0).toLocaleString("id-ID")}`;
   }
-
-  startCountdownDetection();
 });
 
 function formatVaNumber(va) {
@@ -54,41 +56,130 @@ function generateDummyVa(bank) {
   return prefix + Math.floor(1000000000 + Math.random() * 9000000000);
 }
 
-function startCountdownDetection() {
-  const countdownEl = document.getElementById("countdownText");
+function copyVaNumber() {
+  const vaEl = document.getElementById("vaNumberDisplay");
+  if (!vaEl) return;
+  const rawNumber = vaEl.innerText.replace(/\s+/g, "");
 
-  countdownTimer = setInterval(() => {
-    secondsRemaining--;
-
-    if (countdownEl) {
-      countdownEl.innerText = `${secondsRemaining} detik`;
-    }
-
-    if (secondsRemaining <= 0) {
-      clearInterval(countdownTimer);
-      processVaPaymentSuccess();
-    }
-  }, 1000);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(rawNumber).then(() => {
+      if (typeof showToast === "function") {
+        showToast("Nomor VA berhasil disalin!", "success");
+      } else {
+        alert("Nomor VA berhasil disalin: " + rawNumber);
+      }
+    }).catch(() => {
+      fallbackCopyText(rawNumber);
+    });
+  } else {
+    fallbackCopyText(rawNumber);
+  }
 }
 
-async function processVaPaymentSuccess() {
-  if (!activeOrder) return;
+function fallbackCopyText(text) {
+  const tempInput = document.createElement("input");
+  tempInput.value = text;
+  document.body.appendChild(tempInput);
+  tempInput.select();
+  document.execCommand("copy");
+  document.body.removeChild(tempInput);
+  if (typeof showToast === "function") {
+    showToast("Nomor VA berhasil disalin!", "success");
+  } else {
+    alert("Nomor VA berhasil disalin: " + text);
+  }
+}
 
-  const timerNotice = document.getElementById("timerNotice");
-  if (timerNotice) {
-    timerNotice.innerHTML = `<span>⏳</span><span>Memproses mutasi rekening...</span>`;
+function handleVaProofFileSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const maxBytes = 2 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    if (typeof showToast === "function") {
+      showToast("Ukuran file terlalu besar. Maksimal 2 MB.", "error");
+    } else {
+      alert("Ukuran file terlalu besar. Maksimal 2 MB.");
+    }
+    event.target.value = "";
+    return;
   }
 
-  const userId = currentUser ? currentUser.user_id : 12;
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+  if (!allowedTypes.includes(file.type)) {
+    if (typeof showToast === "function") {
+      showToast("Format file harus berupa gambar (JPG, PNG, atau WEBP).", "error");
+    } else {
+      alert("Format file harus berupa gambar (JPG, PNG, atau WEBP).");
+    }
+    event.target.value = "";
+    return;
+  }
+
+  selectedVaProofFile = file;
+
+  const previewBox = document.getElementById("vaProofPreviewBox");
+  const previewImg = document.getElementById("vaProofPreviewImg");
+  const fileNameText = document.getElementById("vaProofFileName");
+  const dropzone = document.getElementById("vaUploadDropzone");
+  const btnSubmit = document.getElementById("btnSubmitVaProof");
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (previewImg) previewImg.src = e.target.result;
+    if (fileNameText) fileNameText.innerText = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    if (previewBox) previewBox.style.display = "block";
+    if (dropzone) dropzone.style.display = "none";
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerText = "Kirim Bukti Pembayaran";
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeSelectedVaFile() {
+  selectedVaProofFile = null;
+  const fileInput = document.getElementById("vaProofFileInput");
+  if (fileInput) fileInput.value = "";
+
+  const previewBox = document.getElementById("vaProofPreviewBox");
+  const dropzone = document.getElementById("vaUploadDropzone");
+  const btnSubmit = document.getElementById("btnSubmitVaProof");
+
+  if (previewBox) previewBox.style.display = "none";
+  if (dropzone) dropzone.style.display = "block";
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerText = "Kirim Bukti Pembayaran";
+  }
+}
+
+async function submitVaPaymentProof() {
+  if (!activeOrder || !selectedVaProofFile) {
+    if (typeof showToast === "function") {
+      showToast("Silakan pilih berkas bukti transfer terlebih dahulu.", "warning");
+    }
+    return;
+  }
+
+  const btnSubmit = document.getElementById("btnSubmitVaProof");
+  if (btnSubmit) {
+    btnSubmit.disabled = true;
+    btnSubmit.innerText = "Mengunggah Bukti...";
+  }
+
+  const formData = new FormData();
+  formData.append("master_order_id", activeOrder.master_order_id || 0);
+  if (activeOrder.sub_order_id) {
+    formData.append("sub_order_id", activeOrder.sub_order_id);
+  }
+  formData.append("proof_image", selectedVaProofFile);
 
   try {
-    const res = await fetch("/on-shop/api/buyer/orders.php?action=pay_order", {
+    const res = await fetch("/on-shop/api/buyer/upload_payment_proof.php", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        master_order_id: activeOrder.master_order_id,
-        user_id: userId
-      })
+      body: formData
     });
 
     const result = await res.json();
@@ -102,18 +193,36 @@ async function processVaPaymentSuccess() {
         redirectToOrders();
       }
     } else {
-      sessionStorage.removeItem("activeOrderSession");
-      redirectToOrders();
+      if (typeof showToast === "function") {
+        showToast(result.message || "Gagal mengunggah bukti pembayaran.", "error");
+      } else {
+        alert(result.message || "Gagal mengunggah bukti pembayaran.");
+      }
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerText = "Kirim Bukti Pembayaran";
+      }
     }
   } catch (err) {
-    console.error("Koneksi gagal saat update pembayaran VA:", err);
-    sessionStorage.removeItem("activeOrderSession");
-    redirectToOrders();
+    console.error("Gagal mengunggah bukti pembayaran VA:", err);
+    if (typeof showToast === "function") {
+      showToast("Terjadi kendala jaringan saat mengunggah berkas.", "error");
+    } else {
+      alert("Terjadi kendala jaringan saat mengunggah berkas.");
+    }
+    if (btnSubmit) {
+      btnSubmit.disabled = false;
+      btnSubmit.innerText = "Kirim Bukti Pembayaran";
+    }
   }
 }
 
 function redirectToOrders() {
-  window.location.href = "pesanan-saya.html?tab=dikemas";
+  window.location.href = "pesanan-saya.html?tab=belum_bayar";
 }
 
+window.copyVaNumber = copyVaNumber;
+window.handleVaProofFileSelected = handleVaProofFileSelected;
+window.removeSelectedVaFile = removeSelectedVaFile;
+window.submitVaPaymentProof = submitVaPaymentProof;
 window.redirectToOrders = redirectToOrders;

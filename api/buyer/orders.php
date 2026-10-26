@@ -43,11 +43,16 @@ try {
                 so.delivered_at,
                 DATE_FORMAT(so.created_at, '%d %b %Y, %H:%i') AS created_at,
                 mo.invoice_number,
+                mo.grand_total,
                 s.shop_id,
                 s.shop_name,
                 s.pickup_city AS shop_city,
+                p.payment_id,
                 p.payment_method,
                 p.payment_status,
+                p.proof_image_url,
+                p.rejection_reason,
+                p.verified_at,
                 p.va_number,
                 p.expired_at
             FROM sub_orders so
@@ -115,6 +120,7 @@ try {
 
             $order['items'] = $items;
             $order['dispute'] = $dispute ?: null;
+            $order['proof_view_url'] = !empty($order['proof_image_url']) ? '/on-shop/api/files/payment_proof.php?file=' . urlencode(basename($order['proof_image_url'])) : null;
             $results[] = $order;
         }
 

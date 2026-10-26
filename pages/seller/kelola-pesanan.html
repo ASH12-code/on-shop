@@ -33,6 +33,10 @@
         <button class="tab-btn active" data-status="all" onclick="handleTabClick('all', this)">
           Semua <span class="tab-count" id="countAll">0</span>
         </button>
+        <button class="tab-btn" data-status="MENUNGGU_VERIFIKASI" onclick="handleTabClick('MENUNGGU_VERIFIKASI', this)">
+          Menunggu Verifikasi 
+          <span class="tab-count badge-warning" id="countVerifikasi">0</span>
+        </button>
         <button class="tab-btn" data-status="DIKEMAS" onclick="handleTabClick('DIKEMAS', this)">
           Perlu Diproses 
           <span class="tab-count badge-danger" id="countDikemas">0</span>
@@ -218,6 +222,60 @@
       <div class="modal-actions" style="justify-content:center; gap:10px;">
         <button type="button" class="btn-modal-cancel" onclick="closeCancelConfirmModal()">Kembali</button>
         <button type="button" class="btn-modal-confirm" style="background:#ef4444;" id="btnExecuteCancel">Batalkan Pesanan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 6: PRATINJAU BUKTI PEMBAYARAN TRANSFER
+       ========================================================= -->
+  <div class="modal-overlay" id="proofModal" style="display:none; z-index:10000;">
+    <div class="modal-card" style="max-width: 480px; text-align: center;">
+      <div class="modal-header-row">
+        <h3>Bukti Pembayaran Transfer</h3>
+        <button type="button" class="btn-close-modal" onclick="closeProofModal()">✕</button>
+      </div>
+      <p style="font-size:12px; color:#64748b;" id="proofOrderInvText">#ORD-000000</p>
+      
+      <div style="margin: 14px 0; background: #0f172a; border-radius: 8px; overflow: hidden; min-height: 220px; max-height: 380px; display: flex; align-items: center; justify-content: center; position: relative;">
+        <img id="proofModalImg" src="" alt="Bukti Transfer" style="max-width: 100%; max-height: 380px; object-fit: contain;" />
+        <div id="proofLoadingSpinner" style="display: none; color: #fff; font-size: 13px;">Memuat gambar...</div>
+      </div>
+
+      <div class="modal-actions" style="justify-content: center; gap: 10px;">
+        <button type="button" class="btn-modal-cancel" onclick="closeProofModal()">Tutup</button>
+        <button type="button" class="btn-modal-cancel" style="background: #ef4444; color: #fff; border: none; font-weight: bold;" onclick="openRejectModalFromProof()">❌ Tolak Bukti</button>
+        <button type="button" class="btn-modal-confirm" style="background: #2e8b57; font-weight: bold;" onclick="approvePaymentFromProof()">✅ Setujui Pembayaran</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       MODAL 7: ALASAN PENOLAKAN BUKTI PEMBAYARAN
+       ========================================================= -->
+  <div class="modal-overlay" id="rejectModal" style="display:none; z-index:10002;">
+    <div class="modal-card" style="max-width: 420px; text-align: left;">
+      <div class="modal-header-row">
+        <h3 style="color: #ef4444;">Tolak Bukti Pembayaran</h3>
+        <button type="button" class="btn-close-modal" onclick="closeRejectModal()">✕</button>
+      </div>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;" id="rejectOrderInvText">#ORD-000000</p>
+
+      <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Pilih Alasan Umum:</label>
+      <select id="rejectPresetSelect" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; margin-bottom: 8px;" onchange="handleRejectPresetChange()">
+        <option value="">-- Pilih Alasan Umum atau Ketik di Bawah --</option>
+        <option value="Nominal transfer tidak sesuai dengan total tagihan pesanan.">Nominal transfer tidak sesuai dengan total tagihan pesanan.</option>
+        <option value="Bukti transfer buram, terpotong, atau informasi tidak terbaca.">Bukti transfer buram, terpotong, atau informasi tidak terbaca.</option>
+        <option value="Dana transfer belum masuk ke rekening mutasi toko kami.">Dana transfer belum masuk ke rekening mutasi toko kami.</option>
+        <option value="Bukti struk tidak valid atau terindikasi bukan transaksi pesanan ini.">Bukti struk tidak valid atau terindikasi bukan transaksi pesanan ini.</option>
+      </select>
+
+      <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 4px;">Catatan Penolakan untuk Pembeli:</label>
+      <textarea id="rejectReasonTextarea" placeholder="Jelaskan alasan secara jelas kepada pembeli agar dapat diperbaiki..." style="width: 100%; height: 80px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12.5px; margin-bottom: 16px; resize: vertical; box-sizing: border-box;"></textarea>
+
+      <div class="modal-actions" style="justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn-modal-cancel" onclick="closeRejectModal()">Batal</button>
+        <button type="button" class="btn-modal-confirm" style="background: #ef4444;" onclick="submitRejectPayment()">Kirim Penolakan</button>
       </div>
     </div>
   </div>
