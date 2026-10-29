@@ -138,3 +138,40 @@ body {
 .hidden {
   display: none !important;
 }
+
+/* --- RESPONSIVITAS MOBILE (MINGGU 5) --- */
+@media (max-width: 768px) {
+  .payment-container {
+    max-width: 90%;
+    margin: 20px auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-container {
+    max-width: 100%;
+    margin: 15px auto;
+    padding: 0 10px;
+  }
+  .payment-card {
+    padding: 20px 16px;
+    border-radius: 8px;
+  }
+  .payment-card h2 {
+    font-size: 17.5px;
+  }
+  .qr-wrapper {
+    padding: 12px;
+  }
+  .qr-img {
+    width: 180px;
+    height: 180px;
+  }
+  .bill-amount-val {
+    font-size: 18px;
+  }
+  .modal-box {
+    padding: 20px 16px;
+    width: 92%;
+  }
+}

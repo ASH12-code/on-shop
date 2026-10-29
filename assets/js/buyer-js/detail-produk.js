@@ -261,6 +261,7 @@ function renderGalleryUI() {
   allGalleryImages.forEach((item, idx) => {
     const thumb = document.createElement("img");
     thumb.src = item.url;
+    thumb.loading = "lazy";
     thumb.className = `thumb-item ${idx === 0 ? "active" : ""}`;
     thumb.style.width = "60px";
     thumb.style.height = "60px";

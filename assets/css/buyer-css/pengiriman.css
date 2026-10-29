@@ -185,3 +185,88 @@ body {
 .btn-outline:hover {
   background: #f0f0f0;
 }
+
+/* --- NAVIGASI KEMBALI & RESPONSIVITAS MINGGU 5 --- */
+.top-nav-bar {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.btn-back-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #2e8b57;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 13.5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background-color: #e8f5e9;
+  transition: all 0.2s ease;
+}
+
+.btn-back-nav:hover {
+  background-color: #2e8b57;
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 12px 10px;
+  }
+  .checkout-container,
+  .tracking-container {
+    width: 100%;
+  }
+  .box-container {
+    padding: 16px 14px;
+    margin-bottom: 14px;
+  }
+  .receipt-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px 8px;
+  }
+  .checkout-container h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: 14.5px;
+    margin-bottom: 12px;
+  }
+  .address-card {
+    padding: 12px 10px;
+  }
+  .address-header {
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+  .address-text {
+    font-size: 12.5px;
+  }
+  .courier-note {
+    font-size: 12.5px;
+    padding: 8px;
+  }
+  .shipping-radio {
+    padding: 10px;
+  }
+  .ship-name {
+    font-size: 13px;
+  }
+  .ship-etd {
+    font-size: 11px;
+  }
+  .ship-price {
+    font-size: 13px;
+  }
+}

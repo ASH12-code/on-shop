@@ -433,3 +433,63 @@ body.admin-body {
   font-size: 12px;
   font-weight: bold;
 }
+
+/* =========================================================
+   RESPONSIVITAS MOBILE (MINGGU 5)
+   ========================================================= */
+@media (max-width: 992px) {
+  .admin-main-content {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 16px;
+  }
+
+  .header-control-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .search-input-box {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .merchant-tabs-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .table-responsive,
+  .toko-table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-dialog {
+    width: 95%;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-main-content {
+    padding: 12px 10px;
+  }
+
+  .header-text-group h2 {
+    font-size: 18px;
+  }
+
+  .toast-box {
+    right: 15px;
+    left: 15px;
+    bottom: -100px;
+    justify-content: center;
+  }
+
+  .toast-box.show {
+    bottom: 20px;
+  }
+}

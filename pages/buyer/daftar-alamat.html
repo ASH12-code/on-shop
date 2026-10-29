@@ -1,49 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alamat</title>
+    <title>Buku Alamat - ON Shop</title>
+    <link rel="stylesheet" href="../../assets/css/buyer-css/daftar-alamat.css">
 </head>
-<link rel="stylesheet" href="../../assets/css/buyer-css/daftar-alamat.css">
 <body>
-    <!-- Modal Tambah/Edit Alamat (Sisipkan di akun.html) -->
-<div id="modalTambahAlamat" class="modal-overlay" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Tambah Alamat Baru</h3>
-            <button class="btn-close" id="closeModalTambah">&times;</button>
+    <div class="address-page-container">
+        <div class="top-nav-bar">
+            <a href="akun.html" class="btn-back-nav" title="Kembali ke Akun">
+                <span>&larr;</span> Kembali ke Profil Akun
+            </a>
+            <h2>Buku Alamat Pengiriman</h2>
         </div>
-        <form id="formAlamat">
-            <div class="input-group">
-                <label>Label Alamat</label>
-                <input type="text" class="input-field" placeholder="Misal: Kos, Rumah, atau Kantor" required>
+        
+        <div class="modal-content standalone-form-card">
+            <div class="modal-header">
+                <h3>Tambah / Ubah Alamat</h3>
             </div>
-            <div class="input-group">
-                <label>Nama Lengkap Penerima</label>
-                <input type="text" class="input-field" required>
-            </div>
-            <div class="input-group">
-                <label>Nomor Telepon Aktif</label>
-                <input type="text" class="input-field" required>
-            </div>
-            <div class="input-group">
-                <label>Alamat Lengkap</label>
-                <textarea class="input-field" rows="3" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan" required></textarea>
-            </div>
-            <div class="input-group" style="display: flex; gap: 10px;">
-                <div style="flex: 1;">
-                    <label>Kota/Kabupaten</label>
+            <form id="formAlamat">
+                <div class="input-group">
+                    <label>Label Alamat</label>
+                    <input type="text" class="input-field" placeholder="Misal: Kos, Rumah, atau Kantor" required>
+                </div>
+                <div class="input-group">
+                    <label>Nama Lengkap Penerima</label>
                     <input type="text" class="input-field" required>
                 </div>
-                <div style="flex: 1;">
-                    <label>Kode Pos</label>
+                <div class="input-group">
+                    <label>Nomor Telepon Aktif</label>
                     <input type="text" class="input-field" required>
                 </div>
-            </div>
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Simpan Alamat</button>
-        </form>
+                <div class="input-group">
+                    <label>Alamat Lengkap</label>
+                    <textarea class="input-field" rows="3" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan" required></textarea>
+                </div>
+                <div class="input-group form-row-responsive">
+                    <div style="flex: 1;">
+                        <label>Kota/Kabupaten</label>
+                        <input type="text" class="input-field" required>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Kode Pos</label>
+                        <input type="text" class="input-field" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-save-addr">Simpan Alamat</button>
+            </form>
+        </div>
     </div>
-</div>
 </body>
 </html>

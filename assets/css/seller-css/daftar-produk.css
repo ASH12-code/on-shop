@@ -396,3 +396,51 @@ input:checked + .slider:before {
 .hidden {
   display: none !important;
 }
+
+/* --- RESPONSIVITAS MOBILE (MINGGU 5) --- */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 15px;
+  }
+  .main-content {
+    padding: 16px 12px;
+    width: 100%;
+  }
+  .toolbar-card {
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+  .table-card {
+    overflow-x: auto;
+  }
+  .product-table {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .btn-add-product {
+    width: 100%;
+    text-align: center;
+  }
+  .tab-filter-bar {
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .tab-btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
