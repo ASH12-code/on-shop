@@ -77,11 +77,15 @@
   <main class="main-content">
     <section class="banner-section box-container">
       <div class="banner-wrapper">
-        <img
-          src="../../assets/images/banner.png"
-          alt="Promo Spesial ON Shop"
-          onerror="this.src='https://placehold.co/1000x380?text=Promo+Spesial+ON+Shop'"
-        />
+        <picture>
+          <source srcset="../../assets/Images/banner.webp" type="image/webp" />
+          <img
+            src="../../assets/Images/banner.png"
+            alt="Promo Spesial ON Shop"
+            fetchpriority="high"
+            onerror="this.src='https://placehold.co/1000x380?text=Promo+Spesial+ON+Shop'"
+          />
+        </picture>
       </div>
     </section>
 
@@ -90,61 +94,61 @@
       <div class="category-grid">
         <div class="category-item" onclick="filterByCategory('Elektronik')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/elektronik.png" alt="Elektronik" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/elektronik.webp';" />
+            <img src="../../assets/Images/kategori/elektronik.png" alt="Elektronik" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/elektronik.webp';" />
           </div>
           <span class="category-name">Elektronik</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Pria')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/pakaian pria.png" alt="Pakaian Pria" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/pakaian pria.webp';" />
+            <img src="../../assets/Images/kategori/pakaian pria.png" alt="Pakaian Pria" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/pakaian pria.webp';" />
           </div>
           <span class="category-name">Pakaian Pria</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Wanita')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/pakaian perempuan.png" alt="Pakaian Wanita" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/pakaian perempuan.webp';" />
+            <img src="../../assets/Images/kategori/pakaian perempuan.png" alt="Pakaian Wanita" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/pakaian perempuan.webp';" />
           </div>
           <span class="category-name">Pakaian Wanita</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Sepatu')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/sepatu.png" alt="Sepatu" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/sepatu.webp';" />
+            <img src="../../assets/Images/kategori/sepatu.png" alt="Sepatu" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/sepatu.webp';" />
           </div>
           <span class="category-name">Sepatu</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Tas')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/tas.png" alt="Tas" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/tas.webp';" />
+            <img src="../../assets/Images/kategori/tas.png" alt="Tas" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/tas.webp';" />
           </div>
           <span class="category-name">Tas & Ransel</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Rumah')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/peralatan rumah tangga.png" alt="Rumah Tangga" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/peralatan rumah tangga.webp';" />
+            <img src="../../assets/Images/kategori/peralatan rumah tangga.png" alt="Rumah Tangga" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/peralatan rumah tangga.webp';" />
           </div>
           <span class="category-name">Rumah Tangga</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Kecantikan')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/make up.png" alt="Kecantikan" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/make up.webp';" />
+            <img src="../../assets/Images/kategori/make up.png" alt="Kecantikan" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/make up.webp';" />
           </div>
           <span class="category-name">Kecantikan</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Makanan')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/makanan dan minuman.png" alt="Makanan" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/makanan dan minuman.webp';" />
+            <img src="../../assets/Images/kategori/makanan dan minuman.png" alt="Makanan" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/makanan dan minuman.webp';" />
           </div>
           <span class="category-name">Makanan</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Olahraga')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/olaraga.png" alt="Olahraga" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/olaraga.webp';" />
+            <img src="../../assets/Images/kategori/olaraga.png" alt="Olahraga" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/olaraga.webp';" />
           </div>
           <span class="category-name">Olahraga</span>
         </div>
         <div class="category-item" onclick="filterByCategory('Buku')">
           <div class="category-img-box">
-            <img src="../../assets/Images/kategori/alat tulis.png" alt="Buku" class="category-thumb" onerror="this.onerror=null; this.src='../../assets/Images/kategori/alat tulis.webp';" />
+            <img src="../../assets/Images/kategori/alat tulis.png" alt="Buku" class="category-thumb" loading="lazy" onerror="this.onerror=null; this.src='../../assets/Images/kategori/alat tulis.webp';" />
           </div>
           <span class="category-name">Buku & Tulis</span>
         </div>

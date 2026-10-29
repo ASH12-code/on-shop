@@ -143,6 +143,7 @@ function renderSearchResults(products) {
             src="${imageSrc}" 
             alt="${escapeHtml(prod.product_name)}" 
             class="product-thumb"
+            loading="lazy"
             onerror="this.src='https://placehold.co/300x300/cccccc/333333?text=No+Image'"
           >
         </div>

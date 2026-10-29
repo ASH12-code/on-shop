@@ -97,7 +97,7 @@ function renderProductsGrid(products) {
     card.innerHTML = `
       <a href="detail-produk.html?id=${p.product_id}" style="text-decoration: none; color: inherit;">
         <div class="product-img-wrapper">
-          <img src="${p.image_url}" alt="${escapeHtml(p.name)}" class="product-thumb" />
+          <img src="${p.image_url}" alt="${escapeHtml(p.name)}" class="product-thumb" loading="lazy" />
         </div>
         <h4 class="product-title">${escapeHtml(p.name)}</h4>
         <p class="product-price">Rp ${Number(p.price || 0).toLocaleString("id-ID")}</p>

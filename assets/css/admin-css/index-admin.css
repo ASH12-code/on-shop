@@ -401,3 +401,69 @@ body.admin-body {
   font-size: 11.5px;
   border: 1px solid #bbf7d0;
 }
+
+/* =========================================================
+   RESPONSIVITAS MOBILE (MINGGU 5)
+   ========================================================= */
+@media (max-width: 992px) {
+  .admin-main-content {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 16px;
+  }
+
+  .header-control-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-action-group {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .kpi-grid-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .table-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .table-tab-filter {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-main-content {
+    padding: 12px 10px;
+  }
+
+  .kpi-grid-container {
+    grid-template-columns: 1fr;
+  }
+
+  .header-text-group h2 {
+    font-size: 18px;
+  }
+
+  .filter-select,
+  .btn-export-report {
+    width: 100%;
+    justify-content: center;
+  }
+}

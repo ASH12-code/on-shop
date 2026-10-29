@@ -13,6 +13,7 @@ const getBadgeApiUrl = () => {
 
 document.addEventListener("DOMContentLoaded", () => {
   fetchGlobalSidebarBadges();
+  initAdminMobileSidebar();
 });
 
 /**
@@ -97,3 +98,62 @@ async function handleAdminLogout() {
 // Buka fungsi ke level window agar bisa dipanggil dari elemen HTML dan skrip modul lain
 window.fetchGlobalSidebarBadges = fetchGlobalSidebarBadges;
 window.handleAdminLogout = handleAdminLogout;
+
+/**
+ * 4. INISIALISASI MOBILE TOPBAR & OFF-CANVAS SIDEBAR (MINGGU 5)
+ */
+function initAdminMobileSidebar() {
+  const sidebar = document.querySelector(".admin-sidebar");
+  if (!sidebar) return;
+
+  // Cek apakah backdrop sudah ada, jika belum buat dinamis
+  let backdrop = document.querySelector(".admin-sidebar-backdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.className = "admin-sidebar-backdrop";
+    document.body.appendChild(backdrop);
+  }
+
+  // Cek apakah mobile topbar sudah ada, jika belum buat dinamis
+  let mobileTopbar = document.querySelector(".admin-mobile-topbar");
+  if (!mobileTopbar) {
+    mobileTopbar = document.createElement("header");
+    mobileTopbar.className = "admin-mobile-topbar";
+    mobileTopbar.innerHTML = `
+      <div class="admin-mobile-brand">
+        <span style="background:#2e8b57;color:#fff;border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;">ON</span>
+        <span>ON Shop Admin</span>
+      </div>
+      <button type="button" class="admin-hamburger-btn" id="btnAdminHamburger" aria-label="Toggle Menu Admin">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    `;
+    document.body.insertBefore(mobileTopbar, sidebar);
+  }
+
+  const toggleSidebar = () => {
+    sidebar.classList.toggle("show-mobile");
+    backdrop.classList.toggle("show-mobile");
+  };
+
+  const closeSidebar = () => {
+    sidebar.classList.remove("show-mobile");
+    backdrop.classList.remove("show-mobile");
+  };
+
+  const hamburgerBtn = document.getElementById("btnAdminHamburger") || mobileTopbar.querySelector(".admin-hamburger-btn");
+  if (hamburgerBtn) {
+    hamburgerBtn.addEventListener("click", toggleSidebar);
+  }
+
+  backdrop.addEventListener("click", closeSidebar);
+
+  // Tutup sidebar saat link navigasi diklik pada mobile
+  sidebar.querySelectorAll(".nav-link").forEach(link => {
+    link.addEventListener("click", closeSidebar);
+  });
+}
+
+window.initAdminMobileSidebar = initAdminMobileSidebar;

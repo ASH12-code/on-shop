@@ -200,3 +200,50 @@ body {
   text-decoration: none;
   margin-right: 15px;
 }
+
+/* --- RESPONSIVITAS MOBILE (MINGGU 5) --- */
+@media (max-width: 768px) {
+  body {
+    padding: 12px 10px;
+  }
+  .order-card {
+    padding: 16px 14px;
+  }
+  .order-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .action-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px 8px;
+  }
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .product-item {
+    gap: 10px;
+  }
+  .product-thumb {
+    width: 65px;
+    height: 65px;
+  }
+  .product-name {
+    font-size: 14px;
+  }
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  .action-buttons .btn {
+    width: 100%;
+  }
+}
