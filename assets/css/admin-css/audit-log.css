@@ -1,0 +1,249 @@
+/* =========================================================
+   ON SHOP - CSS LOG AKTIVITAS AUDIT (SUPER ADMIN)
+   File: assets/css/admin-css/audit-log.css
+   ========================================================= */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+body.admin-body {
+  background-color: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+  display: flex;
+  width: 100%;
+}
+
+.admin-main-content {
+  flex: 1;
+  padding: 24px 32px 60px 32px;
+  overflow-y: auto;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Standar Kotak Bergaris Hijau Atas 4px */
+.admin-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid #2e8b57;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+/* Header */
+.header-control-card {
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-text-group h2 {
+  font-size: 22px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.header-text-group p {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.header-filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input-box {
+  width: 280px;
+  padding: 9px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  background: #ffffff;
+  color: #334155;
+}
+
+.search-input-box:focus {
+  border-color: #2e8b57;
+}
+
+.filter-select {
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+}
+
+/* Tabel Audit Log */
+.table-section-card {
+  padding: 24px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.admin-data-table th {
+  background-color: #f8fafc;
+  padding: 12px 16px;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-data-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.admin-data-table tr:hover td {
+  background-color: #f8fafc;
+}
+
+/* Badge Tipe Aksi */
+.action-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.badge-setting {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-dispute {
+  background-color: #fefce8;
+  color: #a16207;
+  border: 1px solid #fef08a;
+}
+
+.badge-shop-suspend {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.badge-shop-active {
+  background-color: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-default {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.ip-tag {
+  font-family: monospace;
+  font-size: 11.5px;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #475569;
+}
+
+/* Toast */
+.toast-box {
+  position: fixed;
+  bottom: -80px;
+  right: 30px;
+  background-color: #2e8b57;
+  color: #ffffff;
+  padding: 14px 22px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 5px solid #1a5c38;
+  z-index: 9999;
+  transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast-box.show {
+  bottom: 30px;
+}
+
+/* Responsivitas Mobile */
+@media (max-width: 992px) {
+  .admin-main-content {
+    padding: 16px;
+  }
+
+  .header-control-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .header-filter-bar {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input-box {
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-main-content {
+    padding: 12px 10px;
+  }
+
+  .header-text-group h2 {
+    font-size: 18px;
+  }
+
+  .toast-box {
+    right: 15px;
+    left: 15px;
+    bottom: -100px;
+    justify-content: center;
+  }
+
+  .toast-box.show {
+    bottom: 20px;
+  }
+}

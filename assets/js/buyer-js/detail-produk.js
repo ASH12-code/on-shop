@@ -163,6 +163,7 @@ async function fetchProductDetail() {
 
     renderReviews(reviews, productData.rating_avg);
     processPendingAction();
+    checkInitialWishlistStatus();
 
   } catch (error) {
     console.error("Gagal memuat rincian produk:", error);
@@ -590,3 +591,88 @@ function escapeHtml(text) {
 window.handleAddToCart = handleAddToCart;
 window.handleDirectBuy = handleDirectBuy;
 window.switchTab = switchTab;
+
+/**
+ * 8. INTEGRASI WISHLIST PEMBELI (MINGGU 6)
+ */
+let isProductInWishlist = false;
+
+async function checkInitialWishlistStatus() {
+  if (!productData || !productData.product_id) return;
+  const user = getLoggedInUser();
+  if (!user) return;
+
+  try {
+    const isSubdir = window.location.pathname.includes("/on-shop/");
+    const url = isSubdir
+      ? `/on-shop/api/buyer/wishlist.php?action=check&product_id=${productData.product_id}`
+      : `../../api/buyer/wishlist.php?action=check&product_id=${productData.product_id}`;
+
+    const res = await fetch(url, { credentials: "include" });
+    if (res.ok) {
+      const result = await res.json();
+      if (result.status && result.data) {
+        updateWishlistButtonUI(result.data.in_wishlist);
+      }
+    }
+  } catch (e) {
+    // abaikan jika offline
+  }
+}
+
+function updateWishlistButtonUI(inWishlist) {
+  isProductInWishlist = Boolean(inWishlist);
+  const iconD = document.getElementById("wishlistIconDesktop");
+  const textD = document.getElementById("wishlistTextDesktop");
+  const btnD  = document.getElementById("btnWishlistDesktop");
+  const iconM = document.getElementById("wishlistIconMobile");
+
+  if (iconD) iconD.innerText = isProductInWishlist ? "❤️" : "🤍";
+  if (textD) textD.innerText = isProductInWishlist ? "Disimpan" : "Favorit";
+  if (btnD) {
+    btnD.style.borderColor = isProductInWishlist ? "#ef4444" : "#cbd5e1";
+    btnD.style.color = isProductInWishlist ? "#ef4444" : "#64748b";
+    btnD.style.backgroundColor = isProductInWishlist ? "#fef2f2" : "#ffffff";
+  }
+  if (iconM) iconM.innerText = isProductInWishlist ? "❤️" : "🤍";
+}
+
+async function handleToggleWishlist() {
+  const user = getLoggedInUser();
+  if (!user) {
+    requireLoginRedirect("Silakan masuk terlebih dahulu untuk menyimpan produk ke Wishlist!");
+    return;
+  }
+
+  if (!productData || !productData.product_id) return;
+
+  try {
+    const isSubdir = window.location.pathname.includes("/on-shop/");
+    const url = isSubdir
+      ? `/on-shop/api/buyer/wishlist.php?action=toggle`
+      : `../../api/buyer/wishlist.php?action=toggle`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ product_id: productData.product_id })
+    });
+
+    const result = await res.json();
+    if (result.status) {
+      updateWishlistButtonUI(result.data.in_wishlist);
+      if (typeof showToast === "function") {
+        showToast(result.message, result.data.in_wishlist ? "success" : "info");
+      }
+    } else {
+      if (typeof showToast === "function") {
+        showToast(result.message || "Gagal mengubah wishlist.", "error");
+      }
+    }
+  } catch (err) {
+    console.error("Toggle wishlist error:", err);
+  }
+}
+
+window.handleToggleWishlist = handleToggleWishlist;

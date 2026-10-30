@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pengaturan Platform - Super Admin ON Shop</title>
+  
+  <!-- CSS Global Sidebar & Modul Pengaturan -->
+  <link rel="stylesheet" href="../../assets/css/admin-css/sidebar-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/admin-css/pengaturan-platform.css" />
+</head>
+<body class="admin-body">
+
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo-circle">ON</div>
+      <div>
+        <span class="brand-title">ON Shop</span>
+        <span class="brand-badge-admin">ADMIN</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="index.html" class="nav-link">
+        <span class="nav-link-content">📊 Dashboard Global</span>
+      </a>
+      <a href="manajemen-toko.html" class="nav-link">
+        <span class="nav-link-content">🏪 Manajemen Toko</span>
+        <span class="nav-badge-pill" id="badgePendingShops"></span>
+      </a>
+      <a href="manajemen-user.html" class="nav-link">
+        <span class="nav-link-content">👥 Manajemen Pembeli</span>
+      </a>
+      <a href="manajemen-keuangan.html" class="nav-link">
+        <span class="nav-link-content">💰 Keuangan & Payout</span>
+        <span class="nav-badge-pill" id="badgePendingPayouts"></span>
+      </a>
+      <a href="pusat-bantuan.html" class="nav-link">
+        <span class="nav-link-content">⚖️ Pusat Bantuan</span>
+        <span class="nav-badge-pill" id="badgeOpenDisputes"></span>
+      </a>
+      <a href="pengaturan-platform.html" class="nav-link active">
+        <span class="nav-link-content">⚙️ Pengaturan Platform</span>
+      </a>
+      <a href="audit-log.html" class="nav-link">
+        <span class="nav-link-content">📜 Log Aktivitas</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom-actions">
+      <a href="/on-shop/pages/buyer/index.html" target="_blank" rel="noopener noreferrer" class="nav-link back-store" title="Buka etalase marketplace publik">
+        <span class="nav-link-content">🌐 Kunjungi Marketplace</span>
+        <span class="external-icon">↗</span>
+      </a>
+      <button type="button" class="btn-sidebar-logout" onclick="handleAdminLogout()">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="admin-main-content">
+    <header class="admin-card header-control-card">
+      <div class="header-text-group">
+        <h2>⚙️ Konfigurasi & Pengaturan Global Platform</h2>
+        <p>Kelola persentase komisi, biaya penanganan, kontak customer care, dan status operasional sistem.</p>
+      </div>
+      <div>
+        <span style="font-size: 12.5px; color: #64748b;" id="lastUpdatedText">Memuat...</span>
+      </div>
+    </header>
+
+    <form id="settingsForm" onsubmit="handleSavePlatformSettings(event)">
+      <!-- Bagian 1: Komisi & Keuangan -->
+      <section class="admin-card settings-section-card">
+        <div class="section-legend">
+          <span>💰 Tarif Komisi & Biaya Penanganan</span>
+        </div>
+        <div class="settings-grid">
+          <div class="setting-field-group">
+            <label for="commissionInput" class="setting-label">Persentase Komisi Penjual (%)</label>
+            <input type="number" step="0.1" min="0" max="50" id="commissionInput" class="setting-input" required />
+            <span class="setting-hint">Potongan otomatis platform dari setiap transaksi pesanan selesai (Standar: 5%).</span>
+          </div>
+
+          <div class="setting-field-group">
+            <label for="handlingFeeInput" class="setting-label">Biaya Penanganan Aplikasi (Rp)</label>
+            <input type="number" step="100" min="0" id="handlingFeeInput" class="setting-input" required />
+            <span class="setting-hint">Biaya operasional pemeliharaan sistem per checkout pembeli.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bagian 2: Kontak Layanan & Mediasi -->
+      <section class="admin-card settings-section-card">
+        <div class="section-legend">
+          <span>📞 Kontak Layanan & Bantuan Pelanggan</span>
+        </div>
+        <div class="settings-grid">
+          <div class="setting-field-group">
+            <label for="supportEmailInput" class="setting-label">Email Customer Care Resmi</label>
+            <input type="email" id="supportEmailInput" class="setting-input" required />
+            <span class="setting-hint">Alamat surel tujuan saat pembeli atau penjual mengajukan eskalasi bantuan.</span>
+          </div>
+
+          <div class="setting-field-group">
+            <label for="supportPhoneInput" class="setting-label">Nomor WhatsApp / Call Center</label>
+            <input type="text" id="supportPhoneInput" class="setting-input" required />
+            <span class="setting-hint">Nomor hotline resmi untuk konfirmasi pembayaran manual dan mediasi sengketa.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bagian 3: Status Operasional -->
+      <section class="admin-card settings-section-card">
+        <div class="section-legend">
+          <span>🛡️ Status Operasional Marketplace</span>
+        </div>
+        <div class="settings-grid">
+          <div class="setting-field-group full-width">
+            <label for="marketplaceStatusSelect" class="setting-label">Status Marketplace</label>
+            <select id="marketplaceStatusSelect" class="setting-input">
+              <option value="ACTIVE">🟢 ACTIVE - Marketplace Beroperasi Normal Penuh</option>
+              <option value="MAINTENANCE">🟡 MAINTENANCE - Mode Pemeliharaan Sistem</option>
+            </select>
+            <span class="setting-hint">Perubahan status dicatat otomatis ke dalam Audit Log untuk akuntabilitas operasional.</span>
+          </div>
+        </div>
+
+        <div class="form-actions-bar">
+          <button type="submit" class="btn-save-settings" id="btnSaveSettings">
+            💾 Simpan Perubahan Pengaturan
+          </button>
+        </div>
+      </section>
+    </form>
+  </main>
+
+  <!-- Kotak Toast Notifikasi -->
+  <div id="toastBox" class="toast-box">
+    <div style="background: rgba(255,255,255,0.25); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">✓</div>
+    <span id="toastMessage">Pesan</span>
+  </div>
+
+  <script src="../../assets/js/admin-js/sidebar-admin.js"></script>
+  <script src="../../assets/js/admin-js/pengaturan-platform.js"></script>
+</body>
+</html>

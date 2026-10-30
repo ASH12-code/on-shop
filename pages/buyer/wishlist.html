@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Wishlist Saya - ON Shop</title>
+    
+    <!-- CSS Universal, Toast, & Wishlist Mandiri -->
+    <link rel="stylesheet" href="../../assets/css/buyer-css/navbar.css" />
+    <link rel="stylesheet" href="../../assets/css/buyer-css/toast.css" />
+    <link rel="stylesheet" href="../../assets/css/buyer-css/wishlist.css" />
+</head>
+<body>
+
+    <!-- 1. Universal Top Navbar Model Standar ON Shop -->
+    <nav class="navbar">
+        <div class="nav-left-slot">
+            <a href="index.html" class="nav-brand-link" title="Kembali ke Beranda ON Shop">
+                <div class="nav-brand-circle">ON</div>
+                <span class="nav-brand-text-desktop">ON Shop</span>
+            </a>
+        </div>
+
+        <div class="nav-search-wrapper">
+            <input 
+                type="text" 
+                id="navSearchInput" 
+                placeholder="Cari produk lain di ON Shop..." 
+                class="nav-search-input" 
+                autocomplete="off"
+            />
+            <button type="button" id="navSearchBtn" class="nav-search-btn">Cari</button>
+        </div>
+
+        <div class="nav-menu-group">
+            <a href="chat.html" class="nav-text-btn" title="Pesan Obrolan">
+                <span>Pesan</span>
+                <span class="nav-badge-red nav-hidden" id="navbarChatBadge">0</span>
+            </a>
+
+            <a href="keranjang.html" class="nav-text-btn" title="Keranjang Belanja">
+                <span>Keranjang</span>
+                <span class="nav-badge-red nav-hidden" id="navbarCartBadge">0</span>
+            </a>
+
+            <div class="nav-account-dropdown-wrapper">
+                <div class="nav-account-trigger" id="navAccountTrigger">
+                    <div class="nav-account-avatar" id="navAccountAvatarBadge">👤</div>
+                    <span class="nav-account-name" id="navAccountNameText">Akun</span>
+                    <span class="nav-dropdown-caret">▼</span>
+                </div>
+
+                <div class="nav-dropdown-menu" id="navAccountMenu">
+                    <a href="akun.html" class="nav-dropdown-item">👤 Profil Saya</a>
+                    <a href="wishlist.html" class="nav-dropdown-item" style="font-weight: bold; color: #2e8b57;">❤️ Wishlist Saya</a>
+                    <a href="pesanan-saya.html" class="nav-dropdown-item">📦 Pesanan Saya</a>
+                    <a href="pusat-bantuan.html" class="nav-dropdown-item">❓ Pusat Bantuan</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <button type="button" class="nav-dropdown-item nav-dropdown-logout" onclick="handleBuyerLogout()">
+                        🚪 Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 2. Konten Utama Wishlist -->
+    <main class="wishlist-container">
+        <!-- Breadcrumb Navigasi -->
+        <div class="breadcrumb" style="font-size: 13px; color: #64748b; margin-bottom: 16px;">
+            <a href="index.html" style="color: #2e8b57; text-decoration: none;">Beranda</a> &gt; 
+            <a href="akun.html" style="color: #2e8b57; text-decoration: none;">Akun Saya</a> &gt; 
+            <span>Wishlist</span>
+        </div>
+
+        <!-- Header Kartu -->
+        <header class="wishlist-header-card">
+            <div class="wishlist-title-group">
+                <h2>❤️ Wishlist Produk Impian</h2>
+                <p>Simpan produk incaranmu dan pesan kapan saja saat kamu siap.</p>
+            </div>
+            <div class="wishlist-count-badge" id="wishlistCountBadge">
+                0 Produk
+            </div>
+        </header>
+
+        <!-- Grid Produk Wishlist -->
+        <div class="wishlist-grid" id="wishlistGrid">
+            <!-- Dirender dinamis melalui wishlist.js -->
+        </div>
+
+        <!-- State Kosong (Empty State) -->
+        <div class="wishlist-empty-state" id="wishlistEmptyState" style="display: none;">
+            <div class="wishlist-empty-icon">💔</div>
+            <h3 class="wishlist-empty-title">Wishlist Anda Masih Kosong</h3>
+            <p class="wishlist-empty-desc">
+                Belum ada produk favorit yang disimpan. Temukan berbagai barang impian dan simpan ke wishlist sekarang!
+            </p>
+            <a href="index.html" class="btn-explore">Jelajahi Produk</a>
+        </div>
+    </main>
+
+    <!-- Script Pendukung -->
+    <script src="../../assets/js/buyer-js/toast.js"></script>
+    <script src="../../assets/js/buyer-js/navbar.js"></script>
+    <script src="../../assets/js/buyer-js/wishlist.js"></script>
+</body>
+</html>

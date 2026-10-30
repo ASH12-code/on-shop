@@ -62,6 +62,7 @@
 
                 <div class="nav-dropdown-menu" id="navAccountMenu">
                     <a href="akun.html" class="nav-dropdown-item">👤 Profil Saya</a>
+                    <a href="wishlist.html" class="nav-dropdown-item">❤️ Wishlist Saya</a>
                     <a href="pesanan-saya.html" class="nav-dropdown-item">📦 Pesanan Saya</a>
                     <a href="pusat-bantuan.html" class="nav-dropdown-item">❓ Pusat Bantuan</a>
                     <div class="nav-dropdown-divider"></div>
@@ -135,6 +136,10 @@
 
                 <!-- Tombol Transaksi Desktop -->
                 <div class="action-buttons desktop-only-actions">
+                    <button type="button" class="btn-wishlist-toggle" id="btnWishlistDesktop" onclick="handleToggleWishlist()" title="Simpan ke Wishlist" style="border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; padding: 0 14px; font-size: 15px; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease;">
+                        <span id="wishlistIconDesktop">🤍</span>
+                        <span id="wishlistTextDesktop" style="font-size: 13px; font-weight: 600;">Favorit</span>
+                    </button>
                     <button type="button" class="btn-cart" onclick="handleAddToCart()">🛒 Masukkan Keranjang</button>
                     <button type="button" class="btn-buy" onclick="handleDirectBuy()">Beli Sekarang</button>
                 </div>
@@ -231,6 +236,10 @@
             <span class="action-icon">💬</span>
             <span class="action-text">Chat</span>
         </a>
+        <button type="button" class="mobile-action-chat" id="btnMobileWishlist" onclick="handleToggleWishlist()" title="Favorit" style="border:none; background:none; cursor:pointer;">
+            <span class="action-icon" id="wishlistIconMobile">🤍</span>
+            <span class="action-text">Favorit</span>
+        </button>
         <button type="button" class="mobile-btn-cart" onclick="handleAddToCart()">
             + Keranjang
         </button>
