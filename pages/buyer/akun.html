@@ -278,10 +278,15 @@
     <div id="cropAvatarModal" class="modal-overlay hidden">
         <div class="modal-box modal-box-crop">
             <h3 class="modal-title">Sesuaikan Posisi Foto</h3>
-            <p class="crop-hint-text">Geser slider agar foto pas di tengah lingkaran.</p>
+            <p class="crop-hint-text">Geser foto langsung di layar sentuh atau gunakan slider untuk menyesuaikan posisi.</p>
             
-            <div class="avatar-crop-preview-box">
+            <div class="avatar-crop-preview-box" id="avatarCropContainer">
                 <img id="previewAdjustImg" src="" alt="Preview" class="avatar-crop-img" />
+            </div>
+
+            <div class="crop-slider-group">
+                <label for="avatarZoom">Perbesar Foto (Zoom):</label>
+                <input type="range" id="avatarZoom" min="1" max="3" step="0.05" value="1" class="crop-range-slider" oninput="updateAvatarPosition()" />
             </div>
 
             <div class="crop-slider-group">

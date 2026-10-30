@@ -313,18 +313,104 @@ function handleAvatarUpload(e) {
 
     document.getElementById("avatarPosX").value = 50;
     document.getElementById("avatarPosY").value = 50;
+    const zoomEl = document.getElementById("avatarZoom");
+    if (zoomEl) zoomEl.value = 1;
     updateAvatarPosition();
+    initAvatarTouchDrag();
 
     document.getElementById("cropAvatarModal").classList.remove("hidden");
   };
   reader.readAsDataURL(file);
 }
 
+let isAvatarDragging = false;
+let avatarDragStartX = 0;
+let avatarDragStartY = 0;
+let avatarInitialPosX = 50;
+let avatarInitialPosY = 50;
+
+function initAvatarTouchDrag() {
+  const container = document.getElementById("avatarCropContainer");
+  if (!container || container.dataset.touchInit === "true") return;
+  container.dataset.touchInit = "true";
+
+  container.addEventListener("mousedown", (e) => {
+    isAvatarDragging = true;
+    avatarDragStartX = e.clientX;
+    avatarDragStartY = e.clientY;
+    avatarInitialPosX = parseFloat(document.getElementById("avatarPosX")?.value || 50);
+    avatarInitialPosY = parseFloat(document.getElementById("avatarPosY")?.value || 50);
+    container.classList.add("grabbing");
+    e.preventDefault();
+  });
+
+  container.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      isAvatarDragging = true;
+      avatarDragStartX = e.touches[0].clientX;
+      avatarDragStartY = e.touches[0].clientY;
+      avatarInitialPosX = parseFloat(document.getElementById("avatarPosX")?.value || 50);
+      avatarInitialPosY = parseFloat(document.getElementById("avatarPosY")?.value || 50);
+      container.classList.add("grabbing");
+    }
+  }, { passive: false });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isAvatarDragging) return;
+    handleAvatarDragMove(e.clientX, e.clientY, container);
+  });
+
+  window.addEventListener("touchmove", (e) => {
+    if (!isAvatarDragging || e.touches.length !== 1) return;
+    if (e.cancelable) e.preventDefault();
+    handleAvatarDragMove(e.touches[0].clientX, e.touches[0].clientY, container);
+  }, { passive: false });
+
+  const stopDrag = () => {
+    if (isAvatarDragging) {
+      isAvatarDragging = false;
+      container.classList.remove("grabbing");
+    }
+  };
+  window.addEventListener("mouseup", stopDrag);
+  window.addEventListener("touchend", stopDrag);
+  window.addEventListener("touchcancel", stopDrag);
+}
+
+function handleAvatarDragMove(clientX, clientY, container) {
+  const rect = container.getBoundingClientRect();
+  const width = rect.width || 140;
+  const height = rect.height || 140;
+
+  const dx = clientX - avatarDragStartX;
+  const dy = clientY - avatarDragStartY;
+
+  const percentChangeX = (dx / width) * 100;
+  const percentChangeY = (dy / height) * 100;
+
+  let newX = avatarInitialPosX - percentChangeX;
+  let newY = avatarInitialPosY - percentChangeY;
+
+  newX = Math.max(0, Math.min(100, Math.round(newX)));
+  newY = Math.max(0, Math.min(100, Math.round(newY)));
+
+  const sliderX = document.getElementById("avatarPosX");
+  const sliderY = document.getElementById("avatarPosY");
+  if (sliderX) sliderX.value = newX;
+  if (sliderY) sliderY.value = newY;
+
+  updateAvatarPosition();
+}
+
 function updateAvatarPosition() {
-  const x = document.getElementById("avatarPosX").value;
-  const y = document.getElementById("avatarPosY").value;
+  const x = document.getElementById("avatarPosX")?.value || 50;
+  const y = document.getElementById("avatarPosY")?.value || 50;
+  const zoom = document.getElementById("avatarZoom")?.value || 1;
   const img = document.getElementById("previewAdjustImg");
-  if (img) img.style.objectPosition = `${x}% ${y}%`;
+  if (img) {
+    img.style.objectPosition = `${x}% ${y}%`;
+    img.style.transform = `scale(${zoom})`;
+  }
 }
 
 function closeCropModal() {
@@ -336,8 +422,9 @@ function closeCropModal() {
 async function saveAdjustedAvatar() {
   if (!tempAvatarFile) return;
 
-  const posX = parseInt(document.getElementById("avatarPosX").value, 10);
-  const posY = parseInt(document.getElementById("avatarPosY").value, 10);
+  const posX = parseInt(document.getElementById("avatarPosX")?.value || 50, 10);
+  const posY = parseInt(document.getElementById("avatarPosY")?.value || 50, 10);
+  const zoom = parseFloat(document.getElementById("avatarZoom")?.value || 1);
 
   const img = new Image();
   img.src = document.getElementById("previewAdjustImg").src;
@@ -350,14 +437,17 @@ async function saveAdjustedAvatar() {
     canvas.width = outputSize;
     canvas.height = outputSize;
 
-    const minDim = Math.min(img.width, img.height);
-    const maxOffsetX = img.width - minDim;
-    const maxOffsetY = img.height - minDim;
+    ctx.clearRect(0, 0, outputSize, outputSize);
 
-    const sx = maxOffsetX * (posX / 100);
-    const sy = maxOffsetY * (posY / 100);
+    const baseDim = Math.min(img.width, img.height);
+    const cropDim = Math.max(10, baseDim / zoom);
+    const maxOffsetX = img.width - cropDim;
+    const maxOffsetY = img.height - cropDim;
 
-    ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, outputSize, outputSize);
+    const sx = Math.max(0, Math.min(maxOffsetX, maxOffsetX * (posX / 100)));
+    const sy = Math.max(0, Math.min(maxOffsetY, maxOffsetY * (posY / 100)));
+
+    ctx.drawImage(img, sx, sy, cropDim, cropDim, 0, 0, outputSize, outputSize);
 
     canvas.toBlob(
       async function (blob) {

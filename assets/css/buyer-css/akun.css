@@ -558,7 +558,11 @@ body {
   font-size: 12.5px;
 }
 
-/* Crop Avatar Preview */
+/* Crop Avatar Preview - Touch & Drag Enabled */
+.avatar-crop-preview-box.grabbing,
+.avatar-crop-preview-box:active {
+  cursor: grabbing !important;
+}
 .avatar-crop-preview-box {
   width: 140px;
   height: 140px;
@@ -567,6 +571,11 @@ body {
   margin: 0 auto 14px auto;
   border: 3px solid #2e8b57;
   background-color: #000000;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;

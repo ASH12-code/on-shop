@@ -12,6 +12,12 @@ document.addEventListener("DOMContentLoaded", function () {
   initAccountDropdown();
   protectAccountLinks();
   checkBuyerDisputeAlerts();
+
+  // Sinkronisasi badge obrolan & keranjang berkala (setiap 8 detik)
+  setInterval(function () {
+    initNavbarCartBadge();
+    initNavbarChatBadge();
+  }, 8000);
 });
 
 window.addEventListener("load", function () {
@@ -138,10 +144,12 @@ async function initNavbarChatBadge() {
   }
 
   try {
-    const res = await fetch(`/on-shop/api/buyer/manage_chats.php?action=get_conversations&auth_user_id=${currentUser.user_id}`);
+    const res = await fetch(`/on-shop/api/buyer/manage_chats.php?action=get_unread_count&auth_user_id=${currentUser.user_id}`);
     const result = await res.json();
 
-    if (result.status && Array.isArray(result.data)) {
+    if (result.status && typeof result.unread_count !== "undefined") {
+      renderBadgeUI(badges, parseInt(result.unread_count, 10));
+    } else if (result.status && Array.isArray(result.data)) {
       const totalUnread = result.data.reduce((acc, conv) => acc + parseInt(conv.unread_count || 0, 10), 0);
       renderBadgeUI(badges, totalUnread);
     }

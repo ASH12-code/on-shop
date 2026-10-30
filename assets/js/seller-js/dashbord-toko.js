@@ -269,14 +269,15 @@ function renderTopProductsChart(prodData) {
   const isMobile = window.innerWidth <= 768;
 
   const maxLen = isMobile ? 12 : 22;
-  const rawLabels = prodData.labels || [];
+  const rawLabels = (prodData.labels && prodData.labels.length > 0) ? prodData.labels : ["Belum Ada Penjualan"];
+  const prodDataValues = (prodData.data && prodData.data.length > 0) ? prodData.data : [0];
   const cleanLabels = rawLabels.map(name => {
     return name.length > maxLen ? name.substring(0, maxLen - 2) + ".." : name;
   });
 
   if (topProductsChartInstance) {
     topProductsChartInstance.data.labels = cleanLabels;
-    topProductsChartInstance.data.datasets[0].data = prodData.data || [];
+    topProductsChartInstance.data.datasets[0].data = prodDataValues;
     topProductsChartInstance.data.datasets[0].backgroundColor = CHART_PALETTE.slice(0, cleanLabels.length);
     topProductsChartInstance.update();
     return;
@@ -289,7 +290,7 @@ function renderTopProductsChart(prodData) {
       datasets: [
         {
           label: "Unit Terjual",
-          data: prodData.data || [],
+          data: prodDataValues,
           backgroundColor: CHART_PALETTE.slice(0, cleanLabels.length),
           borderRadius: 4,
         },
