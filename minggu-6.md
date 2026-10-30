@@ -137,12 +137,12 @@ Dokumen perencanaan kerja teknis untuk pelaksanaan **Minggu 6** pada proyek pemb
 
 ## 🧪 Kriteria Selesai (Definition of Done)
 
-- [ ] Pembeli dapat menambah, melihat, dan menghapus produk di halaman Wishlist.
-- [ ] Alur pemulihan kata sandi (Lupa Password) berhasil dijalankan secara mandiri dengan kode OTP simulasi lokal.
-- [ ] Super Admin dapat melihat dan memperbarui parameter pengaturan platform di `pengaturan-platform.html`.
-- [ ] Super Admin dapat memantau riwayat aktivitas administratif di `audit-log.html`.
-- [ ] Skrip pengujian terintegrasi lintas peran (`test_week6_e2e.php`) lulus 100% (`PASS`).
-- [ ] Skrip audit keamanan sistem (`test_week6_security.php`) lulus 100% (`PASS`).
-- [ ] Regresi fitur Minggu 1 s.d. 5 tetap lulus 100% (`PASS`).
-- [ ] Berkas dokumentasi `README.md` tersaji lengkap, rapi, dan siap digunakan.
+- [x] Pembeli dapat menambah, melihat, dan menghapus produk di halaman Wishlist.
+- [x] Alur pemulihan kata sandi (Lupa Password) berhasil dijalankan secara mandiri dengan kode OTP simulasi lokal.
+- [x] Super Admin dapat melihat dan memperbarui parameter pengaturan platform di `pengaturan-platform.html`.
+- [x] Super Admin dapat memantau riwayat aktivitas administratif di `audit-log.html`.
+- [x] Skrip pengujian terintegrasi lintas peran (`test_week6_e2e.php`) lulus 100% (`PASS`).
+- [x] Skrip audit keamanan sistem (`test_week6_security.php`) lulus 100% (`PASS`).
+- [x] Regresi fitur Minggu 1 s.d. 5 tetap lulus 100% (`PASS`).
+- [x] Berkas dokumentasi `README.md` tersaji lengkap, rapi, dan siap digunakan.
 - [ ] Pull Request Minggu 6 dibuka di Tahap 3, divalidasi di Tahap 4, dan digabungkan ke `master` di Tahap 5 setelah mendapat ACC dari pengguna.

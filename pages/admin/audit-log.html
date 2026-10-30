@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log Aktivitas Admin - Super Admin ON Shop</title>
+  
+  <!-- CSS Global Sidebar & Modul Audit Log -->
+  <link rel="stylesheet" href="../../assets/css/admin-css/sidebar-admin.css" />
+  <link rel="stylesheet" href="../../assets/css/admin-css/audit-log.css" />
+</head>
+<body class="admin-body">
+
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo-circle">ON</div>
+      <div>
+        <span class="brand-title">ON Shop</span>
+        <span class="brand-badge-admin">ADMIN</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="index.html" class="nav-link">
+        <span class="nav-link-content">📊 Dashboard Global</span>
+      </a>
+      <a href="manajemen-toko.html" class="nav-link">
+        <span class="nav-link-content">🏪 Manajemen Toko</span>
+        <span class="nav-badge-pill" id="badgePendingShops"></span>
+      </a>
+      <a href="manajemen-user.html" class="nav-link">
+        <span class="nav-link-content">👥 Manajemen Pembeli</span>
+      </a>
+      <a href="manajemen-keuangan.html" class="nav-link">
+        <span class="nav-link-content">💰 Keuangan & Payout</span>
+        <span class="nav-badge-pill" id="badgePendingPayouts"></span>
+      </a>
+      <a href="pusat-bantuan.html" class="nav-link">
+        <span class="nav-link-content">⚖️ Pusat Bantuan</span>
+        <span class="nav-badge-pill" id="badgeOpenDisputes"></span>
+      </a>
+      <a href="pengaturan-platform.html" class="nav-link">
+        <span class="nav-link-content">⚙️ Pengaturan Platform</span>
+      </a>
+      <a href="audit-log.html" class="nav-link active">
+        <span class="nav-link-content">📜 Log Aktivitas</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom-actions">
+      <a href="/on-shop/pages/buyer/index.html" target="_blank" rel="noopener noreferrer" class="nav-link back-store" title="Buka etalase marketplace publik">
+        <span class="nav-link-content">🌐 Kunjungi Marketplace</span>
+        <span class="external-icon">↗</span>
+      </a>
+      <button type="button" class="btn-sidebar-logout" onclick="handleAdminLogout()">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="admin-main-content">
+    <header class="admin-card header-control-card">
+      <div class="header-text-group">
+        <h2>📜 Log Aktivitas Audit Admin</h2>
+        <p>Jejak audit seluruh tindakan administratif: mediasi, status toko, payout, dan perubahan sistem.</p>
+      </div>
+
+      <div class="header-filter-bar">
+        <input 
+          type="text" 
+          id="searchAuditInput" 
+          class="search-input-box" 
+          placeholder="Cari deskripsi, nama admin, IP..." 
+          onkeyup="handleAuditSearch(event)"
+        />
+
+        <select id="actionTypeFilterSelect" class="filter-select" onchange="fetchAuditLogs()">
+          <option value="ALL">Semua Jenis Aksi</option>
+          <option value="UPDATE_PLATFORM_SETTING">Pengaturan Platform</option>
+          <option value="RESOLVE_DISPUTE">Mediasi Sengketa</option>
+          <option value="SUSPEND_SHOP">Penangguhan Toko</option>
+          <option value="ACTIVATE_SHOP">Aktivasi Toko</option>
+          <option value="DELETE_PRODUCT">Hapus Produk</option>
+        </select>
+      </div>
+    </header>
+
+    <section class="admin-card table-section-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <span style="font-size: 13.5px; font-weight: 700; color: #0f172a;" id="auditTotalCounter">
+          Memuat riwayat log...
+        </span>
+        <button type="button" onclick="fetchAuditLogs()" style="background: none; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: #2e8b57;">
+          🔄 Segarkan Data
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-data-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">ID</th>
+              <th style="width: 150px;">Waktu Kejadian</th>
+              <th style="width: 170px;">Admin Pelaksana</th>
+              <th style="width: 180px;">Jenis Tindakan</th>
+              <th>Deskripsi Aktivitas</th>
+              <th style="width: 120px;">IP Address</th>
+            </tr>
+          </thead>
+          <tbody id="auditTableBody">
+            <!-- Dirender via audit-log.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Kotak Toast Notifikasi -->
+  <div id="toastBox" class="toast-box">
+    <div style="background: rgba(255,255,255,0.25); width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">✓</div>
+    <span id="toastMessage">Pesan</span>
+  </div>
+
+  <script src="../../assets/js/admin-js/sidebar-admin.js"></script>
+  <script src="../../assets/js/admin-js/audit-log.js"></script>
+</body>
+</html>
