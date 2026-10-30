@@ -8,7 +8,7 @@ window.SELLER_NAV_ITEMS = window.SELLER_NAV_ITEMS || [
   { key: "dashboard", name: "Dasbor Penjualan", shortName: "Dasbor",  icon: "📊", url: "dashbord-toko.html",   badgeClass: "" },
   { key: "orders",    name: "Kelola Pesanan",   shortName: "Pesanan", icon: "📋", url: "kelola-pesanan.html", badgeClass: "badge-slot-orders" },
   { key: "chats",     name: "Pesan Pelanggan",  shortName: "Pesan",   icon: "💬", url: "chat-pelanggan.html", badgeClass: "badge-slot-chats" },
-  { key: "reviews",   name: "Rating & Ulasan",  shortName: "Ulasan",  icon: "⭐", url: "ulasan-toko.html",    badgeClass: "" }
+  { key: "reviews",   name: "Rating & Ulasan",  shortName: "Ulasan",  icon: "⭐", url: "ulasan-toko.html",    badgeClass: "badge-slot-reviews" }
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -143,6 +143,7 @@ async function syncShopProfileAndBadges() {
         applyBadgeCounts(".badge-slot-stock", counters.empty_stock);
         applyBadgeCounts(".badge-slot-orders", counters.pending_orders);
         applyBadgeCounts(".badge-slot-chats", counters.unread_chats);
+        applyBadgeCounts(".badge-slot-reviews", counters.new_reviews);
       }
     }
   } catch (err) {
@@ -153,8 +154,9 @@ async function syncShopProfileAndBadges() {
 function applyBadgeCounts(selector, count) {
   document.querySelectorAll(selector).forEach(el => {
     if (count > 0) {
-      el.innerText = count;
-      el.style.display = "inline-block";
+      const num = parseInt(count, 10) || 0;
+      el.innerText = num > 99 ? "99+" : num;
+      el.style.display = "inline-flex";
     } else {
       el.style.display = "none";
     }

@@ -931,6 +931,7 @@ function handleReturnImageSelect(e) {
       if (posYSlider) posYSlider.value = 0;
 
       updateReturnImageTransform();
+      initReturnTouchDrag();
       document.getElementById("returnImageAdjustContainer").style.display = "block";
       document.getElementById("btnRemoveReturnImg").style.display = "inline-block";
     };
@@ -1209,6 +1210,7 @@ function handleReviewImageSelect(e) {
       currentImageOffsetY = 0;
 
       updateReviewImageTransform();
+      initReviewTouchDrag();
       document.getElementById("reviewImageAdjustContainer").style.display = "block";
       document.getElementById("btnRemoveReviewImg").style.display = "inline-block";
     };
@@ -1356,3 +1358,153 @@ window.setRating = setRating;
 window.handleReviewImageSelect = handleReviewImageSelect;
 window.removeReviewImage = removeReviewImage;
 window.submitRating = submitRating;
+// =========================================================================
+// INTERAKSI TOUCH-SCREEN DRAG PADA FOTO RETUR & ULASAN
+// =========================================================================
+let isReturnDragging = false;
+let returnTouchStartX = 0;
+let returnTouchStartY = 0;
+let returnInitOffsetX = 0;
+let returnInitOffsetY = 0;
+
+function initReturnTouchDrag() {
+  const container = document.getElementById("returnImgCropContainer");
+  if (!container || container.dataset.touchInit === "true") return;
+  container.dataset.touchInit = "true";
+
+  container.addEventListener("mousedown", (e) => {
+    isReturnDragging = true;
+    returnTouchStartX = e.clientX;
+    returnTouchStartY = e.clientY;
+    returnInitOffsetX = returnImageOffsetX;
+    returnInitOffsetY = returnImageOffsetY;
+    container.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+
+  container.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      isReturnDragging = true;
+      returnTouchStartX = e.touches[0].clientX;
+      returnTouchStartY = e.touches[0].clientY;
+      returnInitOffsetX = returnImageOffsetX;
+      returnInitOffsetY = returnImageOffsetY;
+      container.style.cursor = "grabbing";
+    }
+  }, { passive: false });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isReturnDragging) return;
+    const dx = e.clientX - returnTouchStartX;
+    const dy = e.clientY - returnTouchStartY;
+    returnImageOffsetX = Math.max(-100, Math.min(100, Math.round(returnInitOffsetX + dx)));
+    returnImageOffsetY = Math.max(-100, Math.min(100, Math.round(returnInitOffsetY + dy)));
+    const sliderX = document.getElementById("returnImgPosX");
+    const sliderY = document.getElementById("returnImgPosY");
+    if (sliderX) sliderX.value = returnImageOffsetX;
+    if (sliderY) sliderY.value = returnImageOffsetY;
+    updateReturnImageTransform();
+  });
+
+  window.addEventListener("touchmove", (e) => {
+    if (!isReturnDragging || e.touches.length !== 1) return;
+    if (e.cancelable) e.preventDefault();
+    const dx = e.touches[0].clientX - returnTouchStartX;
+    const dy = e.touches[0].clientY - returnTouchStartY;
+    returnImageOffsetX = Math.max(-100, Math.min(100, Math.round(returnInitOffsetX + dx)));
+    returnImageOffsetY = Math.max(-100, Math.min(100, Math.round(returnInitOffsetY + dy)));
+    const sliderX = document.getElementById("returnImgPosX");
+    const sliderY = document.getElementById("returnImgPosY");
+    if (sliderX) sliderX.value = returnImageOffsetX;
+    if (sliderY) sliderY.value = returnImageOffsetY;
+    updateReturnImageTransform();
+  }, { passive: false });
+
+  const stopReturnDrag = () => {
+    if (isReturnDragging) {
+      isReturnDragging = false;
+      container.style.cursor = "grab";
+    }
+  };
+  window.addEventListener("mouseup", stopReturnDrag);
+  window.addEventListener("touchend", stopReturnDrag);
+  window.addEventListener("touchcancel", stopReturnDrag);
+}
+
+let isReviewDragging = false;
+let reviewTouchStartX = 0;
+let reviewTouchStartY = 0;
+let reviewInitOffsetX = 0;
+let reviewInitOffsetY = 0;
+
+function initReviewTouchDrag() {
+  const container = document.getElementById("reviewImgCropContainer");
+  if (!container || container.dataset.touchInit === "true") return;
+  container.dataset.touchInit = "true";
+
+  container.addEventListener("mousedown", (e) => {
+    isReviewDragging = true;
+    reviewTouchStartX = e.clientX;
+    reviewTouchStartY = e.clientY;
+    reviewInitOffsetX = currentImageOffsetX;
+    reviewInitOffsetY = currentImageOffsetY;
+    container.style.cursor = "grabbing";
+    e.preventDefault();
+  });
+
+  container.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      isReviewDragging = true;
+      reviewTouchStartX = e.touches[0].clientX;
+      reviewTouchStartY = e.touches[0].clientY;
+      reviewInitOffsetX = currentImageOffsetX;
+      reviewInitOffsetY = currentImageOffsetY;
+      container.style.cursor = "grabbing";
+    }
+  }, { passive: false });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isReviewDragging) return;
+    const dx = e.clientX - reviewTouchStartX;
+    const dy = e.clientY - reviewTouchStartY;
+    currentImageOffsetX = Math.max(-100, Math.min(100, Math.round(reviewInitOffsetX + dx)));
+    currentImageOffsetY = Math.max(-100, Math.min(100, Math.round(reviewInitOffsetY + dy)));
+    const sliderX = document.getElementById("reviewImgPosX");
+    const sliderY = document.getElementById("reviewImgPosY");
+    const posXText = document.getElementById("posXValText");
+    const posYText = document.getElementById("posYValText");
+    if (sliderX) sliderX.value = currentImageOffsetX;
+    if (sliderY) sliderY.value = currentImageOffsetY;
+    if (posXText) posXText.innerText = `${currentImageOffsetX}px`;
+    if (posYText) posYText.innerText = `${currentImageOffsetY}px`;
+    updateReviewImageTransform();
+  });
+
+  window.addEventListener("touchmove", (e) => {
+    if (!isReviewDragging || e.touches.length !== 1) return;
+    if (e.cancelable) e.preventDefault();
+    const dx = e.touches[0].clientX - reviewTouchStartX;
+    const dy = e.touches[0].clientY - reviewTouchStartY;
+    currentImageOffsetX = Math.max(-100, Math.min(100, Math.round(reviewInitOffsetX + dx)));
+    currentImageOffsetY = Math.max(-100, Math.min(100, Math.round(reviewInitOffsetY + dy)));
+    const sliderX = document.getElementById("reviewImgPosX");
+    const sliderY = document.getElementById("reviewImgPosY");
+    const posXText = document.getElementById("posXValText");
+    const posYText = document.getElementById("posYValText");
+    if (sliderX) sliderX.value = currentImageOffsetX;
+    if (sliderY) sliderY.value = currentImageOffsetY;
+    if (posXText) posXText.innerText = `${currentImageOffsetX}px`;
+    if (posYText) posYText.innerText = `${currentImageOffsetY}px`;
+    updateReviewImageTransform();
+  }, { passive: false });
+
+  const stopReviewDrag = () => {
+    if (isReviewDragging) {
+      isReviewDragging = false;
+      container.style.cursor = "grab";
+    }
+  };
+  window.addEventListener("mouseup", stopReviewDrag);
+  window.addEventListener("touchend", stopReviewDrag);
+  window.addEventListener("touchcancel", stopReviewDrag);
+}

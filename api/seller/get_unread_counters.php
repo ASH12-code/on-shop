@@ -18,31 +18,43 @@ try {
     $stmtStock->execute([':shop_id' => $shop_id]);
     $emptyStockCount = (int)$stmtStock->fetchColumn();
 
-    // 2. Hitung Pesanan yang Perlu Diproses (DIKEMAS atau MENUNGGU_BAYAR)
+    // 2. Hitung Pesanan yang Perlu Diproses (MENUNGGU_VERIFIKASI atau DIKEMAS)
     $stmtOrders = $db->prepare("
         SELECT COUNT(*) 
         FROM sub_orders 
         WHERE shop_id = :shop_id 
-          AND order_status IN ('DIKEMAS', 'MENUNGGU_BAYAR')
+          AND order_status IN ('MENUNGGU_VERIFIKASI', 'DIKEMAS')
     ");
     $stmtOrders->execute([':shop_id' => $shop_id]);
     $pendingOrdersCount = (int)$stmtOrders->fetchColumn();
 
-    // 3. Hitung Pesan Belum Dibaca
+    // 3. Hitung Pesan Pelanggan Belum Dibaca (Tabel chats)
     $stmtChats = $db->prepare("
         SELECT COUNT(*) 
-        FROM chat_messages 
+        FROM chats 
         WHERE receiver_id = :user_id 
           AND is_read = 0
     ");
     $stmtChats->execute([':user_id' => $user_id]);
     $unreadChatsCount = (int)$stmtChats->fetchColumn();
 
+    // 4. Hitung Ulasan Terbaru Toko (7 Hari Terakhir)
+    $stmtRev = $db->prepare("
+        SELECT COUNT(*) 
+        FROM reviews r
+        JOIN sub_orders so ON r.sub_order_id = so.sub_order_id
+        WHERE so.shop_id = :shop_id 
+          AND r.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    ");
+    $stmtRev->execute([':shop_id' => $shop_id]);
+    $newReviewsCount = (int)$stmtRev->fetchColumn();
+
     echo json_encode([
         "status"         => true,
         "empty_stock"    => $emptyStockCount,
         "pending_orders" => $pendingOrdersCount,
-        "unread_chats"   => $unreadChatsCount
+        "unread_chats"   => $unreadChatsCount,
+        "new_reviews"    => $newReviewsCount
     ]);
     exit;
 

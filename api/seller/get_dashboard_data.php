@@ -40,18 +40,18 @@ try {
         $st  = strtoupper($row['order_status']);
 
         if ($st === 'SELESAI') {
-            // Omzet historis toko (tidak pernah berkurang meskipun saldo kas ditarik)
+            // Omzet historis toko dari pesanan yang sukses selesai
             $totalRevenue += $net;
-        } else if ($st === 'DIKEMAS' || $st === 'DIKIRIM') {
-            // Saldo tertahan / garansi pembeli yang sedang berjalan
+        } else if ($st === 'DIKEMAS' || $st === 'DIKIRIM' || $st === 'MENUNGGU_VERIFIKASI') {
+            // Saldo tertahan / pesanan yang sedang berjalan
             $escrowBalance += $net;
-            if ($st === 'DIKEMAS') {
+            if ($st === 'DIKEMAS' || $st === 'MENUNGGU_VERIFIKASI') {
                 $ordersToProcess++;
             }
         }
     }
 
-    // Jika tabel wallets belum ada data untuk seller ini, fallback ke totalRevenue
+    // Jika tabel wallets belum ada data untuk seller ini, sinkronkan ke availableBalance
     if ($availableBalance == 0.0 && $sellerUserId) {
         $stmtCheckW = $db->prepare("SELECT COUNT(*) FROM wallets WHERE user_id = ?");
         $stmtCheckW->execute([$sellerUserId]);
@@ -82,30 +82,107 @@ try {
     $ordStmt->execute([$shop_id]);
     $recentOrders = $ordStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // 4. Data Tren Omzet Berdasarkan Filter Periode
+    // 4. Data Tren Pendapatan Bersih Berdasarkan Filter Periode (REAL DATABASE QUERY)
+    $salesLabels = [];
+    $salesData   = [];
+
     if ($sales_period === 'weekly') {
-        $salesChart = [
-            'labels' => ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"],
-            'data'   => [4200000, 3800000, 5100000, 2300000]
+        // 4 Minggu Terakhir (Interval per 7 hari ke belakang dari hari ini)
+        $salesLabels = ["Minggu 1", "Minggu 2", "Minggu 3", "Minggu 4"];
+        $weeks = [
+            [28, 22],
+            [21, 15],
+            [14, 8],
+            [7, 0]
         ];
+        foreach ($weeks as [$startDay, $endDay]) {
+            $stmtW = $db->prepare("
+                SELECT COALESCE(SUM(net_seller_amount), 0) 
+                FROM sub_orders 
+                WHERE shop_id = ? 
+                  AND order_status != 'BATAL'
+                  AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+                  AND created_at <= DATE_SUB(NOW(), INTERVAL ? DAY)
+            ");
+            $stmtW->execute([$shop_id, $startDay, $endDay]);
+            $salesData[] = (float)$stmtW->fetchColumn();
+        }
     } else if ($sales_period === 'semester1') {
-        $salesChart = [
-            'labels' => ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"],
-            'data'   => [12500000, 14200000, 11800000, 16500000, 18900000, 21000000]
-        ];
+        // Semester 1: Jan - Jun (Tahun Berjalan)
+        $salesLabels = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"];
+        $stmtM = $db->prepare("
+            SELECT MONTH(created_at) AS bln, COALESCE(SUM(net_seller_amount), 0) AS omzet
+            FROM sub_orders
+            WHERE shop_id = ? 
+              AND order_status != 'BATAL'
+              AND YEAR(created_at) = YEAR(CURDATE())
+              AND MONTH(created_at) BETWEEN 1 AND 6
+            GROUP BY MONTH(created_at)
+        ");
+        $stmtM->execute([$shop_id]);
+        $monthRows = $stmtM->fetchAll(PDO::FETCH_KEY_PAIR);
+        for ($m = 1; $m <= 6; $m++) {
+            $salesData[] = isset($monthRows[$m]) ? (float)$monthRows[$m] : 0.0;
+        }
     } else if ($sales_period === 'semester2') {
-        $salesChart = [
-            'labels' => ["Jul", "Agu", "Sep", "Okt", "Nov", "Des"],
-            'data'   => [19500000, 22100000, 15400000, 18000000, 24500000, 31000000]
-        ];
+        // Semester 2: Jul - Des (Tahun Berjalan)
+        $salesLabels = ["Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+        $stmtM = $db->prepare("
+            SELECT MONTH(created_at) AS bln, COALESCE(SUM(net_seller_amount), 0) AS omzet
+            FROM sub_orders
+            WHERE shop_id = ? 
+              AND order_status != 'BATAL'
+              AND YEAR(created_at) = YEAR(CURDATE())
+              AND MONTH(created_at) BETWEEN 7 AND 12
+            GROUP BY MONTH(created_at)
+        ");
+        $stmtM->execute([$shop_id]);
+        $monthRows = $stmtM->fetchAll(PDO::FETCH_KEY_PAIR);
+        for ($m = 7; $m <= 12; $m++) {
+            $salesData[] = isset($monthRows[$m]) ? (float)$monthRows[$m] : 0.0;
+        }
     } else {
-        $salesChart = [
-            'labels' => ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"],
-            'data'   => [1200000, 1900000, 800000, 1500000, 2200000, 3000000, 2500000]
-        ];
+        // Daily: 7 Hari Terakhir (Harian)
+        $daysIndo = ['Sun' => 'Min', 'Mon' => 'Sen', 'Tue' => 'Sel', 'Wed' => 'Rab', 'Thu' => 'Kam', 'Fri' => 'Jum', 'Sat' => 'Sab'];
+        $stmtD = $db->prepare("
+            SELECT DATE(created_at) AS tgl, COALESCE(SUM(net_seller_amount), 0) AS omzet
+            FROM sub_orders
+            WHERE shop_id = ? 
+              AND order_status != 'BATAL'
+              AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+            GROUP BY DATE(created_at)
+        ");
+        $stmtD->execute([$shop_id]);
+        $dateRows = $stmtD->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        for ($i = 6; $i >= 0; $i--) {
+            $timestamp = strtotime("-$i days");
+            $dateKey   = date('Y-m-d', $timestamp);
+            $dayShort  = date('D', $timestamp);
+            $label     = $daysIndo[$dayShort] ?? $dayShort;
+
+            $salesLabels[] = $label;
+            $salesData[]   = isset($dateRows[$dateKey]) ? (float)$dateRows[$dateKey] : 0.0;
+        }
     }
 
-    // 5. Top 5 Produk Terlaris Toko
+    $salesChart = [
+        'labels' => $salesLabels,
+        'data'   => $salesData
+    ];
+
+    // 5. Top 5 Produk Terlaris Toko (REAL DATABASE QUERY DENGAN FILTER PERIODE)
+    $dateCondition = "";
+    if ($products_period === 'last_7_days') {
+        $dateCondition = "AND so.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+    } else if ($products_period === 'last_30_days') {
+        $dateCondition = "AND so.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+    } else if ($products_period === 'month_jan') {
+        $dateCondition = "AND MONTH(so.created_at) = 1 AND YEAR(so.created_at) = YEAR(CURDATE())";
+    } else if ($products_period === 'month_feb') {
+        $dateCondition = "AND MONTH(so.created_at) = 2 AND YEAR(so.created_at) = YEAR(CURDATE())";
+    }
+
     $topQuery = "
         SELECT 
             oi.product_name,
@@ -113,6 +190,8 @@ try {
         FROM order_items oi
         JOIN sub_orders so ON oi.sub_order_id = so.sub_order_id
         WHERE so.shop_id = ?
+          AND so.order_status != 'BATAL'
+          $dateCondition
         GROUP BY oi.product_id, oi.product_name
         ORDER BY total_sold DESC
         LIMIT 5
@@ -127,11 +206,6 @@ try {
     foreach ($dbTopProducts as $item) {
         $topLabels[] = $item['product_name'];
         $topData[]   = (int)$item['total_sold'];
-    }
-
-    if (empty($topLabels)) {
-        $topLabels = ["keyboard AULA-F75", "Sepatu Sneaker Sporty", "Mouse Gaming RGB", "keyboard Essential75", "Cardigan Rajut"];
-        $topData   = [12, 9, 7, 5, 4];
     }
 
     echo json_encode([

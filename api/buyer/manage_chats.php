@@ -74,6 +74,19 @@ try {
         exit;
     }
 
+    // 2. Hitung Total Pesan Belum Dibaca (Untuk Badge Navbar Pembeli)
+    if ($action === 'get_unread_count') {
+        $stmt = $conn->prepare("SELECT COUNT(*) FROM chats WHERE receiver_id = :uid AND is_read = 0");
+        $stmt->execute(['uid' => $authUserId]);
+        $unreadCount = (int)$stmt->fetchColumn();
+
+        echo json_encode([
+            "status" => true,
+            "unread_count" => $unreadCount
+        ]);
+        exit;
+    }
+
     // 2. Daftar Toko yang Pernah Dichat oleh Pembeli (Hanya jika Auth User Bertindak Sebagai Buyer)
     if ($action === 'get_conversations') {
         $sql = "
