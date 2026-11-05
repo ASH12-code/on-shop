@@ -723,7 +723,7 @@ function closeLogoutModal() {
 function executeLogout() {
   localStorage.removeItem("currentUser");
   sessionStorage.clear();
-  window.location.href = "login.html";
+  fetch("../../api/buyer/logout.php", { method: "POST", credentials: "include" }).finally(() => { window.location.href = "login.html"; });
 }
 
 // ==========================================
