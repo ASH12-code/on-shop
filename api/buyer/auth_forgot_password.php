@@ -104,6 +104,7 @@ try {
         // Nonaktifkan kode OTP lama yang belum terpakai untuk user ini
         $stmtInvalidate = $conn->prepare("UPDATE password_resets SET is_used = 1 WHERE user_id = :uid AND is_used = 0");
         $stmtInvalidate->execute(['uid' => $user['user_id']]);
+        $_SESSION['otp_attempts_' . $user['user_id']] = 0;
 
         // Simpan OTP ke tabel password_resets (Masa aktif: 5 Menit)
         $stmtInsert = $conn->prepare("
@@ -144,6 +145,14 @@ try {
             json_response(false, "User ID dan 6 digit kode OTP wajib diisi!", null, 400);
         }
 
+        // Proteksi Anti-Brute-Force OTP (Maksimal 5 percobaan gagal)
+        $attemptKey = 'otp_attempts_' . $userId;
+        $attempts = (int)($_SESSION[$attemptKey] ?? 0);
+        if ($attempts >= 5) {
+            $conn->prepare("UPDATE password_resets SET is_used = 1 WHERE user_id = :uid AND is_used = 0")->execute(['uid' => $userId]);
+            json_response(false, "Terlalu banyak percobaan OTP yang salah. Kode OTP telah dihanguskan demi keamanan, silakan minta kode baru.", null, 429);
+        }
+
         // Cari OTP yang cocok dan belum kedaluwarsa
         $stmtCheck = $conn->prepare("
             SELECT reset_id, user_id, expires_at 
@@ -162,8 +171,14 @@ try {
         $resetRecord = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
         if (!$resetRecord) {
+            $_SESSION[$attemptKey] = $attempts + 1;
+            if ($_SESSION[$attemptKey] >= 5) {
+                $conn->prepare("UPDATE password_resets SET is_used = 1 WHERE user_id = :uid AND is_used = 0")->execute(['uid' => $userId]);
+                json_response(false, "Batas maksimal 5 percobaan salah tercapai! Kode OTP telah dihanguskan.", null, 429);
+            }
             json_response(false, "Kode OTP yang Anda masukkan salah atau telah kedaluwarsa!", null, 400);
         }
+        $_SESSION[$attemptKey] = 0;
 
         // Generate token reset sandi acak (berlaku 15 menit)
         $resetToken = bin2hex(random_bytes(32));

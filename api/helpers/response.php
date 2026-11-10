@@ -14,8 +14,15 @@ function json_response(bool $status, string $message, $data = null, int $httpCod
         $httpCode = 400;
     }
     
-    http_response_code($httpCode);
-    header("Content-Type: application/json; charset=UTF-8");
+    if (!headers_sent()) {
+        http_response_code($httpCode);
+        header("Content-Type: application/json; charset=UTF-8");
+        header("X-Content-Type-Options: nosniff");
+        header("X-Frame-Options: SAMEORIGIN");
+        header("Referrer-Policy: strict-origin-when-cross-origin");
+    } else {
+        http_response_code($httpCode);
+    }
     
     $payload = [
         "status"  => $status,

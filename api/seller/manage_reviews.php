@@ -120,10 +120,11 @@ try {
     }
 
 } catch (Exception $e) {
+    error_log("Seller manage_reviews error: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status"  => false,
-        "message" => "Kesalahan Database: " . $e->getMessage()
+        "message" => "Terjadi kesalahan sistem saat memproses ulasan."
     ]);
     exit;
 }

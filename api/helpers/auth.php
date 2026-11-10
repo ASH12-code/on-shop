@@ -2,7 +2,10 @@
 // api/helpers/auth.php
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    @ini_set('session.cookie_httponly', '1');
+    @ini_set('session.use_only_cookies', '1');
+    @ini_set('session.cookie_samesite', 'Lax');
+    @session_start();
 }
 
 require_once __DIR__ . '/response.php';
@@ -17,7 +20,8 @@ function get_db_connection() {
 }
 
 /**
- * Memastikan pengguna telah login. Jika belum, kirim respon 401 Unauthorized.
+ * Memastikan pengguna telah login dan akun tidak diblokir (is_banned = 0).
+ * Jika belum login kirim 401, jika diblokir kirim 403.
  * 
  * @return int User ID yang terautentikasi
  */
@@ -26,7 +30,21 @@ function require_auth(): int {
     if (!$userId || !is_numeric($userId) || (int)$userId <= 0) {
         json_response(false, "Sesi login telah berakhir atau belum login. Silakan login kembali.", null, 401);
     }
-    return (int)$userId;
+
+    $uid = (int)$userId;
+    $db = get_db_connection();
+    if ($db) {
+        $stmt = $db->prepare("SELECT is_banned, banned_reason FROM users WHERE user_id = ? LIMIT 1");
+        $stmt->execute([$uid]);
+        $uRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($uRow && !empty($uRow['is_banned']) && (int)$uRow['is_banned'] === 1) {
+            $_SESSION = [];
+            $reason = !empty($uRow['banned_reason']) ? $uRow['banned_reason'] : "Pelanggaran ketentuan layanan.";
+            json_response(false, "Akun Anda telah ditangguhkan oleh Admin: " . $reason, null, 403);
+        }
+    }
+
+    return $uid;
 }
 
 /**
@@ -70,23 +88,28 @@ function get_current_role(): ?string {
 }
 
 /**
- * Mendapatkan shop_id dari sesi aktif atau basis data jika user memiliki toko sah
+ * Mendapatkan shop_id dari sesi aktif atau basis data jika user memiliki toko sah dan tidak dibekukan
  * 
  * @return int shop_id
  */
 function require_seller_shop(): int {
     $userId = require_auth();
     
-    $shopId = $_SESSION['shop_id'] ?? null;
     $db = get_db_connection();
     
-    // Selalu validasi ke database bahwa shop_id benar-benar milik user_id sesi
+    // Selalu validasi ke database bahwa shop_id benar-benar milik user_id sesi dan berstatus aktif
     if ($db) {
-        $stmt = $db->prepare("SELECT shop_id, shop_name, status FROM shops WHERE user_id = ? LIMIT 1");
+        $stmt = $db->prepare("SELECT shop_id, shop_name, status, suspension_reason FROM shops WHERE user_id = ? LIMIT 1");
         $stmt->execute([$userId]);
         $shop = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($shop && !empty($shop['shop_id'])) {
+            $status = strtolower(trim($shop['status'] ?? ''));
+            if (in_array($status, ['banned', 'suspended', 'rejected'], true)) {
+                $reason = !empty($shop['suspension_reason']) ? $shop['suspension_reason'] : "Toko sedang dibekukan atau ditolak oleh Admin.";
+                json_response(false, "Akses toko ditangguhkan: " . $reason, null, 403);
+            }
+
             $shopId = (int)$shop['shop_id'];
             $_SESSION['shop_id'] = $shopId;
             $_SESSION['shop_name'] = $shop['shop_name'];

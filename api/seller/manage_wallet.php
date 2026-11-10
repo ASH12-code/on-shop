@@ -197,7 +197,8 @@ if ($action === 'submit_withdraw') {
         if ($db->inTransaction()) {
             $db->rollBack();
         }
-        echo json_encode(["status" => false, "message" => "Gagal memproses penarikan: " . $e->getMessage()]);
+        error_log("Seller manage_wallet withdraw error: " . $e->getMessage());
+        echo json_encode(["status" => false, "message" => "Terjadi kesalahan sistem saat memproses penarikan dana."]);
         exit;
     }
 }
@@ -225,7 +226,8 @@ if ($action === 'save_bank_account') {
         ]);
         exit;
     } catch (Exception $e) {
-        echo json_encode(["status" => false, "message" => "Gagal menyimpan rekening: " . $e->getMessage()]);
+        error_log("Seller manage_wallet bank error: " . $e->getMessage());
+        echo json_encode(["status" => false, "message" => "Terjadi kesalahan sistem saat menyimpan rekening."]);
         exit;
     }
 }

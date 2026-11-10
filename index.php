@@ -4,3 +4,4 @@
 header("Location: pages/buyer/index.html");
 exit;
 ?>
+
