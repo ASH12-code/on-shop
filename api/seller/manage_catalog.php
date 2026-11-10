@@ -2,6 +2,7 @@
 // C:/laragon/www/on-shop/api/seller/manage_catalog.php
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/seller_auth.php';
+require_once __DIR__ . '/../helpers/upload.php';
 
 $action = $_GET['action'] ?? 'list';
 
@@ -124,14 +125,11 @@ try {
 
                 $finalUrl = $imgStr;
                 if (strpos($imgStr, 'data:image') === 0) {
-                    $parts = explode(',', $imgStr);
-                    if (isset($parts[1])) {
-                        $imgData = base64_decode($parts[1]);
-                        $fileName = 'prod_' . $productId . '_' . bin2hex(random_bytes(6)) . '.webp';
-                        if (file_put_contents($uploadDir . $fileName, $imgData)) {
-                            $finalUrl = '/on-shop/assets/images/products/' . $fileName;
-                        }
+                    $savedFile = validate_and_save_base64_image($imgStr, $uploadDir, 'prod_' . $productId . '_');
+                    if (!$savedFile) {
+                        continue;
                     }
+                    $finalUrl = '/on-shop/assets/images/products/' . $savedFile;
                 }
 
                 $insImg = $db->prepare("
@@ -161,14 +159,8 @@ try {
             $vImg   = !empty($v['image_url']) ? trim($v['image_url']) : null;
 
             if (!empty($vImg) && strpos($vImg, 'data:image') === 0) {
-                $parts = explode(',', $vImg);
-                if (isset($parts[1])) {
-                    $imgData = base64_decode($parts[1]);
-                    $fileName = 'var_' . $productId . '_' . bin2hex(random_bytes(6)) . '.webp';
-                    if (file_put_contents($uploadDir . $fileName, $imgData)) {
-                        $vImg = '/on-shop/assets/images/products/' . $fileName;
-                    }
-                }
+                $savedVarFile = validate_and_save_base64_image($vImg, $uploadDir, 'var_' . $productId . '_');
+                $vImg = $savedVarFile ? ('/on-shop/assets/images/products/' . $savedVarFile) : null;
             }
 
             $insVar->execute([$productId, $vName, $vPrice, $vStock, $vSku, $vImg]);
@@ -372,7 +364,8 @@ try {
     if (isset($db) && $db->inTransaction()) {
         $db->rollBack();
     }
+    error_log("Seller manage_catalog error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Kesalahan Database: " . $e->getMessage()]);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan sistem saat mengelola katalog."]);
     exit;
 }

@@ -90,4 +90,61 @@ function handle_image_upload(array $fileArray, string $destinationDir, array $al
 
     return $newFileName;
 }
+
+/**
+ * Memvalidasi dan menyimpan gambar dari string Base64 secara aman (Anti-Webshell & Anti-Oversize)
+ *
+ * @param string $base64String String data:image/...;base64,...
+ * @param string $destinationDir Direktori tujuan fisik
+ * @param string $prefix Awalan nama file (misal 'prod_' atau 'shop_')
+ * @param int $maxSizeBytes Ukuran maksimal dalam byte (default 5MB)
+ * @return string|null Nama file baru yang tersimpan atau null jika tidak valid
+ */
+function validate_and_save_base64_image(string $base64String, string $destinationDir, string $prefix = 'img_', int $maxSizeBytes = 5242880): ?string {
+    if (strpos($base64String, 'data:image') !== 0) {
+        return null;
+    }
+
+    $parts = explode(',', $base64String, 2);
+    if (!isset($parts[1]) || empty($parts[1])) {
+        return null;
+    }
+
+    $imgData = base64_decode($parts[1], true);
+    if ($imgData === false || strlen($imgData) === 0 || strlen($imgData) > $maxSizeBytes) {
+        return null;
+    }
+
+    // Validasi binary struktur gambar nyata menggunakan getimagesizefromstring
+    $imgInfo = @getimagesizefromstring($imgData);
+    if ($imgInfo === false || empty($imgInfo['mime'])) {
+        return null;
+    }
+
+    $allowedMimes = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp'
+    ];
+
+    $mime = strtolower($imgInfo['mime']);
+    if (!isset($allowedMimes[$mime])) {
+        return null;
+    }
+
+    $destinationDir = rtrim($destinationDir, '/\\') . DIRECTORY_SEPARATOR;
+    if (!is_dir($destinationDir)) {
+        @mkdir($destinationDir, 0755, true);
+    }
+
+    $fileName = $prefix . bin2hex(random_bytes(8)) . '.' . $allowedMimes[$mime];
+    $fullPath = $destinationDir . $fileName;
+
+    if (@file_put_contents($fullPath, $imgData) === false) {
+        return null;
+    }
+
+    @chmod($fullPath, 0644);
+    return $fileName;
+}
 ?>

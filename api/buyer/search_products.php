@@ -76,9 +76,11 @@ try {
     ]);
 
 } catch (PDOException $e) {
+    error_log("Buyer search_products error: " . $e->getMessage());
+    http_response_code(500);
     echo json_encode([
         "status"  => false,
-        "message" => "Search Query Error: " . $e->getMessage()
+        "message" => "Terjadi kesalahan pada pencarian produk."
     ]);
 }
 ?>

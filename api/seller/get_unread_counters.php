@@ -59,10 +59,11 @@ try {
     exit;
 
 } catch (Exception $e) {
+    error_log("Seller get_unread_counters error: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         "status"  => false,
-        "message" => "Gagal mengambil counters: " . $e->getMessage()
+        "message" => "Terjadi kesalahan sistem saat memuat penghitung notifikasi."
     ]);
     exit;
 }

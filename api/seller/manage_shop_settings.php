@@ -2,6 +2,7 @@
 // C:/laragon/www/on-shop/api/seller/manage_shop_settings.php
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/seller_auth.php'; // Proteksi multi-seller dinamis
+require_once __DIR__ . '/../helpers/upload.php';
 
 $action = $_GET['action'] ?? 'get_settings';
 
@@ -49,21 +50,13 @@ try {
         $finalLogoPath = $currStmt->fetchColumn();
 
         if (!empty($raw_logo) && strpos($raw_logo, 'data:image') === 0) {
-            $uploadDir = '../../assets/images/shops/';
-            if (!file_exists($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
+            $uploadDir = __DIR__ . '/../../assets/images/shops/';
+            $savedLogo = validate_and_save_base64_image($raw_logo, $uploadDir, 'shop_' . $shop_id . '_');
+            if (!$savedLogo) {
+                echo json_encode(["status" => false, "message" => "File gambar logo toko tidak valid atau rusak."]);
+                exit;
             }
-
-            $parts = explode(',', $raw_logo);
-            if (isset($parts[1])) {
-                $imgData = base64_decode($parts[1]);
-                $fileName = 'shop_' . $shop_id . '_' . time() . '.webp';
-                $filePath = $uploadDir . $fileName;
-
-                if (file_put_contents($filePath, $imgData)) {
-                    $finalLogoPath = '/on-shop/assets/images/shops/' . $fileName;
-                }
-            }
+            $finalLogoPath = '/on-shop/assets/images/shops/' . $savedLogo;
         }
 
         $stmt = $db->prepare("
@@ -95,7 +88,8 @@ try {
         exit;
     }
 } catch (Exception $e) {
+    error_log("Seller manage_shop_settings error: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(["status" => false, "message" => "Kesalahan Database: " . $e->getMessage()]);
+    echo json_encode(["status" => false, "message" => "Terjadi kesalahan sistem saat memperbarui pengaturan toko."]);
     exit;
 }
